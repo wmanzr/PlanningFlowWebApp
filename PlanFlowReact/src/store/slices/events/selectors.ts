@@ -1,0 +1,10 @@
+import type { RootState } from '../../types';
+import { eventsAdapterSelectors } from './eventsSlice';
+import type { EventId } from '@/types';
+export const selectEventsListMeta = (state: RootState) => state.events.list;
+export const selectEventDetailMeta = (state: RootState) => state.events.detail;
+export const selectEventDashboard = (state: RootState) => state.events.dashboard;
+export const selectEventPostMortem = (state: RootState) => state.events.postMortem;
+export const selectEventActionMeta = (state: RootState) => state.events.action;
+export const selectAllEvents = (state: RootState) => eventsAdapterSelectors.selectAll(state.events);
+export const selectEventById = (id: EventId | undefined) => (state: RootState) => id === undefined ? undefined : eventsAdapterSelectors.selectById(state.events, id);

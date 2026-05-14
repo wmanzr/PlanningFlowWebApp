@@ -1,0 +1,80 @@
+import { type AssignmentId, type BookingId, type EventId, type IncidentId, type ResourceId, type SkillId, type TaskId, type UserId, } from '@/types';
+export const API_BASE = '/api/v1';
+export const ENDPOINTS = {
+    auth: {
+        login: `${API_BASE}/auth/login`,
+        refresh: `${API_BASE}/auth/refresh`,
+        register: `${API_BASE}/auth/register`,
+    },
+    events: {
+        root: `${API_BASE}/events`,
+        byId: (id: EventId): string => `${API_BASE}/events/${id}`,
+        dashboard: (id: EventId): string => `${API_BASE}/events/${id}/dashboard`,
+        startPlanning: (id: EventId): string => `${API_BASE}/events/${id}/status/start-planning`,
+        activate: (id: EventId): string => `${API_BASE}/events/${id}/status/activate`,
+        complete: (id: EventId): string => `${API_BASE}/events/${id}/status/complete`,
+        cancel: (id: EventId): string => `${API_BASE}/events/${id}/status/cancel`,
+        postMortemAi: (id: EventId): string => `${API_BASE}/events/${id}/post-mortem/ai`,
+    },
+    tasks: {
+        root: `${API_BASE}/tasks`,
+        forEvent: (eventId: EventId): string => `${API_BASE}/tasks/for-event/${eventId}`,
+        forUser: (userId: UserId): string => `${API_BASE}/tasks/for-user/${userId}`,
+        byId: (id: TaskId): string => `${API_BASE}/tasks/${id}`,
+        startExecution: (id: TaskId): string => `${API_BASE}/tasks/${id}/status/start-execution`,
+        done: (id: TaskId): string => `${API_BASE}/tasks/${id}/status/done`,
+        cancel: (id: TaskId): string => `${API_BASE}/tasks/${id}/status/cancel`,
+        assignments: (id: TaskId): string => `${API_BASE}/tasks/${id}/assignments`,
+        assignmentByUser: (id: TaskId, userId: UserId): string => `${API_BASE}/tasks/${id}/assignments/${userId}`,
+        matching: (id: TaskId): string => `${API_BASE}/tasks/${id}/matching`,
+        allocateResources: (id: TaskId): string => `${API_BASE}/tasks/${id}/resources/allocate`,
+    },
+    bookings: {
+        forTask: (taskId: TaskId): string => `${API_BASE}/bookings/for-task/${taskId}`,
+        byId: (id: BookingId): string => `${API_BASE}/bookings/${id}`,
+        schedule: (id: BookingId): string => `${API_BASE}/bookings/${id}/schedule`,
+        confirm: (id: BookingId): string => `${API_BASE}/bookings/${id}/status/confirm`,
+        fail: (id: BookingId): string => `${API_BASE}/bookings/${id}/status/fail`,
+        cancel: (id: BookingId): string => `${API_BASE}/bookings/${id}/status/cancel`,
+    },
+    users: {
+        root: `${API_BASE}/users`,
+        byId: (id: UserId): string => `${API_BASE}/users/${id}`,
+        skills: (id: UserId): string => `${API_BASE}/users/${id}/skills`,
+        profile: (id: UserId): string => `${API_BASE}/users/${id}/profile`,
+        viewerContext: (id: UserId): string => `${API_BASE}/users/${id}/viewer-context`,
+        acceptAssignment: (assignmentId: AssignmentId): string => `${API_BASE}/users/assignments/${assignmentId}/accept`,
+        rejectAssignment: (assignmentId: AssignmentId): string => `${API_BASE}/users/assignments/${assignmentId}/reject`,
+    },
+    incidents: {
+        root: `${API_BASE}/incidents`,
+        forEvent: (eventId: EventId): string => `${API_BASE}/incidents/for-event/${eventId}`,
+        byId: (id: IncidentId): string => `${API_BASE}/incidents/${id}`,
+        accept: (id: IncidentId): string => `${API_BASE}/incidents/${id}/accept`,
+        resolve: (id: IncidentId): string => `${API_BASE}/incidents/${id}/resolve`,
+    },
+    skills: {
+        root: `${API_BASE}/skills`,
+        byId: (id: SkillId): string => `${API_BASE}/skills/${id}`,
+        categories: `${API_BASE}/skills/categories`,
+    },
+    resources: {
+        internal: `${API_BASE}/resources/internal`,
+        internalById: (id: ResourceId): string => `${API_BASE}/resources/internal/${id}`,
+        internalOperational: (id: ResourceId): string => `${API_BASE}/resources/internal/${id}/status/operational`,
+        internalBroken: (id: ResourceId): string => `${API_BASE}/resources/internal/${id}/status/broken`,
+        externalById: (id: ResourceId): string => `${API_BASE}/resources/external/${id}`,
+    },
+    notifications: {
+        root: `${API_BASE}/notifications`,
+        unreadCount: `${API_BASE}/notifications/unread-count`,
+        read: (id: number): string => `${API_BASE}/notifications/${id}/read`,
+        readAll: `${API_BASE}/notifications/read-all`,
+    },
+    ws: {
+        events: `${API_BASE}/ws/events`,
+    },
+    public: {
+        landingStats: `${API_BASE}/public/landing-stats`,
+    },
+} as const;

@@ -1,0 +1,10 @@
+import { createSelector } from '@reduxjs/toolkit';
+import type { RootState } from '../../types';
+import { tasksAdapterSelectors } from './tasksSlice';
+import type { EventId, TaskId } from '@/types';
+export const selectTasksListMeta = (state: RootState) => state.tasks.list;
+export const selectTaskDetailMeta = (state: RootState) => state.tasks.detail;
+export const selectTaskActionMeta = (state: RootState) => state.tasks.action;
+export const selectAllTasks = (state: RootState) => tasksAdapterSelectors.selectAll(state.tasks);
+export const selectTaskById = (id: TaskId | undefined) => (state: RootState) => id === undefined ? undefined : tasksAdapterSelectors.selectById(state.tasks, id);
+export const makeSelectTasksByEvent = (eventId: EventId | undefined) => createSelector(selectAllTasks, (tasks) => eventId === undefined ? [] : tasks.filter((task) => task.eventId === eventId));

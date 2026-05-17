@@ -11,8 +11,10 @@ public final class GeoPoint {
     private final double longitude;
 
     public GeoPoint(final double latitude, final double longitude) {
-        DomainAssert.isTrue(latitude >= -90.0 && latitude <= 90.0, "Широта должна быть в диапазоне [-90; 90]", "INVALID_LATITUDE");
-        DomainAssert.isTrue(longitude >= -180.0 && longitude <= 180.0, "Долгота должна быть в диапазоне [-180; 180]", "INVALID_LONGITUDE");
+        DomainAssert.isTrue(latitude >= -90.0 && latitude <= 90.0,
+        "Широта должна быть в диапазоне [-90; 90]", "INVALID_LATITUDE");
+        DomainAssert.isTrue(longitude >= -180.0 && longitude <= 180.0,
+        "Долгота должна быть в диапазоне [-180; 180]", "INVALID_LONGITUDE");
         this.latitude = latitude;
         this.longitude = longitude;
     }

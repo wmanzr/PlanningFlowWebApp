@@ -1,9 +1,11 @@
 import axios, { type AxiosError } from 'axios';
+import { ENDPOINTS } from './endpoints';
 import { type ApiErrorResponse, type AppApiError } from '@/types';
 export const ERROR_CODE = {
     NETWORK: 'NETWORK_ERROR',
     TIMEOUT: 'TIMEOUT',
     UNAUTHORIZED: 'AUTH_FAILED',
+    INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
     FORBIDDEN: 'ACCESS_DENIED',
     VALIDATION_FAILED: 'VALIDATION_FAILED',
     EXTERNAL_UNAVAILABLE: 'EXTERNAL_SUPPLIER_UNAVAILABLE',
@@ -21,6 +23,19 @@ const parseFieldErrors = (raw: unknown): Record<string, string> | undefined => {
     }
     return Object.keys(out).length > 0 ? out : undefined;
 };
+const requestUrl = (axiosError: AxiosError): string => {
+    const url = axiosError.config?.url ?? '';
+    const base = axiosError.config?.baseURL ?? '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    return `${base}${url}`;
+};
+const isAuthLoginRequest = (axiosError: AxiosError): boolean =>
+    requestUrl(axiosError).includes(ENDPOINTS.auth.login);
+const isAuthRegisterRequest = (axiosError: AxiosError): boolean =>
+    requestUrl(axiosError).includes(ENDPOINTS.auth.register);
+export const isInvalidCredentialsError = (err: AppApiError): boolean => err.errorCode === ERROR_CODE.INVALID_CREDENTIALS;
 const isApiErrorResponse = (data: unknown): data is ApiErrorResponse => {
     if (typeof data !== 'object' || data === null)
         return false;
@@ -51,6 +66,10 @@ export const parseApiError = (error: unknown): AppApiError => {
                 httpStatus: status,
                 timestamp: data.timestamp,
             };
+            if (data.errorCode === 'INVALID_CREDENTIALS' && isAuthLoginRequest(axiosError)) {
+                base.message = 'Неверный логин или пароль';
+                base.errorCode = ERROR_CODE.INVALID_CREDENTIALS;
+            }
             if (fieldErrors !== undefined) {
                 base.fieldErrors = fieldErrors;
             }
@@ -69,6 +88,22 @@ export const parseApiError = (error: unknown): AppApiError => {
                 message: 'Нет соединения с сервером',
                 errorCode: ERROR_CODE.NETWORK,
                 httpStatus: null,
+                timestamp: Date.now(),
+            };
+        }
+        if (isAuthLoginRequest(axiosError) && (status === 401 || status === 403)) {
+            return {
+                message: 'Неверный логин или пароль',
+                errorCode: ERROR_CODE.INVALID_CREDENTIALS,
+                httpStatus: status,
+                timestamp: Date.now(),
+            };
+        }
+        if (isAuthRegisterRequest(axiosError) && status === 401) {
+            return {
+                message: 'Не удалось зарегистрироваться. Проверьте данные и попробуйте снова.',
+                errorCode: ERROR_CODE.UNAUTHORIZED,
+                httpStatus: status,
                 timestamp: Date.now(),
             };
         }

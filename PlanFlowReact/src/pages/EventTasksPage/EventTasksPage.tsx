@@ -6,9 +6,10 @@ import { selectEventById } from '@/store/slices/events/selectors';
 import { fetchTasksForEventThunk, tasksActions } from '@/store/slices/tasks/tasksSlice';
 import { selectTasksListMeta } from '@/store/slices/tasks/selectors';
 import { selectCurrentUser, selectHasRole } from '@/store/slices/auth/selectors';
-import { Button, Card, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Pagination, } from '@/components/ui';
-import { TaskCard, TaskCreateWizard } from '@/components/domain/task';
-import { EventStatus, UserRole, asEventId, type TaskResponseDto, } from '@/types';
+import { Button, Card, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Pagination, Select, } from '@/components/ui';
+import { TaskCard, TaskCreateWizard, TASK_STATUS_LABEL } from '@/components/domain/task';
+import { EventStatus, TaskStatus, UserRole, asEventId, type TaskResponseDto, } from '@/types';
+import { buildStatusFilterOptions } from '@/utils/statusFilterOptions';
 import { PATHS } from '../paths';
 const PAGE_SIZE = 20;
 export const EventTasksPage = () => {
@@ -38,7 +39,9 @@ export const EventTasksPage = () => {
     const canPlanTasks = canManageEvent && !eventClosed && hasCoordinator;
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [taskSearch, setTaskSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
     const [page, setPage] = useState(1);
+    const statusFilterOptions = useMemo(() => buildStatusFilterOptions(TASK_STATUS_LABEL), []);
     const [items, setItems] = useState<TaskResponseDto[]>([]);
     useEffect(() => {
         if (eventId !== undefined) {
@@ -50,7 +53,7 @@ export const EventTasksPage = () => {
     }, [eventId, hasCoordinator]);
     useEffect(() => {
         setPage(1);
-    }, [taskSearch]);
+    }, [taskSearch, statusFilter]);
     useEffect(() => {
         if (eventId === undefined || !event || !hasCoordinator)
             return;
@@ -84,11 +87,15 @@ export const EventTasksPage = () => {
     };
     const sortedFilteredTasks = useMemo(() => {
         const q = taskSearch.trim().toLowerCase();
-        const list = [...items].sort((a, b) => a.startTime.localeCompare(b.startTime));
-        if (!q)
+        let list = [...items].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        if (statusFilter) {
+            list = list.filter((t) => t.status === statusFilter);
+        }
+        if (!q) {
             return list;
+        }
         return list.filter((t) => t.title.toLowerCase().includes(q));
-    }, [items, taskSearch]);
+    }, [items, taskSearch, statusFilter]);
     if (eventId === undefined) {
         return (<PageLayout title="Задачи">
         <ErrorMessage message="Некорректный идентификатор мероприятия"/>
@@ -121,12 +128,15 @@ export const EventTasksPage = () => {
       {tasksList.error ? <ErrorMessage message={tasksList.error.message}/> : null}
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-4">
-          <Input label="Поиск по названию" placeholder="Введите название задачи" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}/>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input label="Поиск по названию" placeholder="Введите название задачи" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}/>
+            <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value === '' ? '' : (e.target.value as TaskStatus))}/>
+          </div>
           {sortedFilteredTasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title={items.length === 0 ? 'Задач нет' : 'Ничего не найдено'} description={items.length === 0
                 ? canPlanTasks
                     ? 'Создайте первую задачу для этого мероприятия.'
                     : 'Задачи по завершенному или отмененному мероприятию доступны только для просмотра.'
-                : 'Измените запрос поиска.'}/>) : null}
+                : 'Измените фильтр по статусу или запрос поиска.'}/>) : null}
           {sortedFilteredTasks.map((task) => (<TaskCard key={task.id} task={task} onClick={(taskId) => navigate(PATHS.taskDetail(event.id, taskId))}/>))}
         </div>
       </Card>

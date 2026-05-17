@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { fetchUsersThunk } from '@/store/slices/users/usersSlice';
 import { selectUsersListMeta } from '@/store/slices/users/selectors';
-import { Badge, Card, EmptyState, ErrorMessage, Input, LoadingArea, PageLayout, Pagination, Select, } from '@/components/ui';
+import { Badge, Card, EmailLink, EmptyState, ErrorMessage, Input, LoadingArea, PageLayout, Pagination, Select, } from '@/components/ui';
 import { type UserResponseDto, UserRole } from '@/types';
 import { isViewerSubject } from '@/utils/isViewerSubject';
 import { PATHS } from '../paths';
@@ -79,24 +79,27 @@ export const UsersDirectoryPage = () => {
       {list.status !== 'pending' && items.length === 0 && !list.error ? (<EmptyState title="Пользователей не найдено"/>) : null}
       <Card padded={false}>
         <ul className="divide-y divide-stroke">
-          {items.map((u) => (<li key={u.id}>
-              <Link to={isViewerSubject(currentUser?.id, u.id)
+          {items.map((u) => {
+            const profilePath = isViewerSubject(currentUser?.id, u.id)
                 ? PATHS.profile
-                : PATHS.userDetail(u.id)} className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-medium text-headline">{u.username}</p>
-                  <p className="text-sm text-paragraph">
-                    {isViewerSubject(currentUser?.id, u.id) ? 'Вы' : u.fullName}
-                  </p>
-                  <p className="text-sm text-paragraph">{u.email}</p>
+                : PATHS.userDetail(u.id);
+            return (<li key={u.id} className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <Link to={profilePath} className="block">
+                    <p className="font-medium text-headline">{u.username}</p>
+                    <p className="text-sm text-paragraph">
+                      {isViewerSubject(currentUser?.id, u.id) ? 'Вы' : u.fullName}
+                    </p>
+                  </Link>
+                  <EmailLink email={u.email} className="mt-1 text-sm font-normal text-paragraph"/>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {u.roles.map((r) => (<Badge key={r} tone="neutral" outline>
                       {ROLE_LABELS[r] ?? r}
                     </Badge>))}
                 </div>
-              </Link>
-            </li>))}
+              </li>);
+          })}
         </ul>
       </Card>
       <Pagination page={page} totalPages={list.totalPages} onChange={setPage} disabled={list.status === 'pending'}/>

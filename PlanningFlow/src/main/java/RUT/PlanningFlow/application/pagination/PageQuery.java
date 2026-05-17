@@ -7,8 +7,10 @@ public record PageQuery(
         int size
 ) {
     public PageQuery {
-        DomainAssert.isTrue(page >= 1, "Номер страницы должен быть >= 1", "INVALID_PAGE_NUMBER");
-        DomainAssert.isTrue(size > 0, "Размер страницы должен быть положительным", "INVALID_PAGE_SIZE");
+        DomainAssert.isTrue(page >= 1,
+        "Номер страницы должен быть >= 1", "INVALID_PAGE_NUMBER");
+        DomainAssert.isTrue(size > 0,
+        "Размер страницы должен быть положительным", "INVALID_PAGE_SIZE");
     }
 
     public int zeroBasedPage() {
@@ -19,4 +21,3 @@ public record PageQuery(
         return zeroBasedPage() * size;
     }
 }
-

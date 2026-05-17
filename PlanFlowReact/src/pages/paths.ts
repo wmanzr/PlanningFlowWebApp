@@ -8,7 +8,6 @@ export const PATHS = {
     eventsList: '/events',
     eventDetail: (id: EventId | string | number = ':eventId'): string => `/events/${id}`,
     eventDashboard: (id: EventId | string | number = ':eventId'): string => `/events/${id}/dashboard`,
-    eventMap: (id: EventId | string | number = ':eventId'): string => `/events/${id}/map`,
     eventIncidents: (id: EventId | string | number = ':eventId'): string => `/events/${id}/incidents`,
     eventTasks: (id: EventId | string | number = ':eventId'): string => `/events/${id}/tasks`,
     taskDetail: (eventId: EventId | string | number = ':eventId', taskId: TaskId | string | number = ':taskId'): string => `/events/${eventId}/tasks/${taskId}`,

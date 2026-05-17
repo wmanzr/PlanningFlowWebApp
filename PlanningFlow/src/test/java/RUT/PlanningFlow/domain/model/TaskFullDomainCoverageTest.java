@@ -132,6 +132,17 @@ class TaskFullDomainCoverageTest {
     }
 
     @Test
+    void add_dependency_rejects_when_dependency_ends_at_or_after_task_end() {
+        final User creator = DomainFixtures.user(1);
+        final Event event = DomainFixtures.event(1, creator);
+        final Task dep = DomainFixtures.openTask(20, event, creator, T0, T1);
+        final Task main = DomainFixtures.openTask(10, event, creator, T1, T1);
+
+        assertThatThrownBy(() -> main.addDependency(dep))
+                .hasFieldOrPropertyWithValue("errorCode", "DEPENDENCY_END_NOT_BEFORE_TASK_END");
+    }
+
+    @Test
     void add_dependency_schedule_conflict_when_starts_before_dependency_ends() {
         final User creator = DomainFixtures.user(1);
         final Event event = DomainFixtures.event(1, creator);
@@ -152,8 +163,8 @@ class TaskFullDomainCoverageTest {
                 event,
                 creator,
                 TaskStatus.DONE,
-                T0.minusHours(5),
-                T0.minusHours(1)
+                DomainFixtures.EVENT_RANGE_START.plusMinutes(30),
+                T0.minusMinutes(30)
         );
         final Task main = DomainFixtures.openTask(10, event, creator, T0, T1);
 
@@ -204,8 +215,8 @@ class TaskFullDomainCoverageTest {
                 event,
                 creator,
                 TaskStatus.IN_PROGRESS,
-                T0.minusHours(5),
-                T0.minusHours(1)
+                DomainFixtures.EVENT_RANGE_START.plusMinutes(30),
+                T0.minusMinutes(30)
         );
         final Task task = new Task(
                 10,
@@ -233,8 +244,8 @@ class TaskFullDomainCoverageTest {
                 event,
                 creator,
                 TaskStatus.DONE,
-                T0.minusHours(5),
-                T0.minusHours(1)
+                DomainFixtures.EVENT_RANGE_START.plusMinutes(30),
+                T0.minusMinutes(30)
         );
         final Task task = new Task(
                 10,
@@ -382,8 +393,8 @@ class TaskFullDomainCoverageTest {
                 DomainFixtures.user(1),
                 "x",
                 TaskStatus.OPEN,
-                T0.minusHours(10),
-                T0.minusHours(8),
+                DomainFixtures.EVENT_RANGE_START.plusHours(1),
+                DomainFixtures.EVENT_RANGE_START.plusHours(2),
                 null,
                 List.of(),
                 List.of()

@@ -50,8 +50,8 @@ class GeoScoreEvaluatorPropertiesTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final EventMode mode = new EventMode(MatchingMode.STANDARD, new MatchingDistance(radiusMeters), WorkloadPolicy.defaults());
         final MatchingContext context = DomainFixtures.matchingContext(t0.minusHours(1), mode, Map.of(1, snapshot));
 

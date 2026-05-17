@@ -5,7 +5,7 @@ import RUT.PlanningFlow.application.port.in.auth.RefreshTokenUseCase;
 import RUT.PlanningFlow.application.port.in.dto.AuthTokenResponse;
 import RUT.PlanningFlow.application.port.out.auth.AuthenticationTokensIssuer;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
-import org.springframework.security.authentication.BadCredentialsException;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +31,9 @@ public class AuthApplicationService implements LoginUseCase, RefreshTokenUseCase
     public AuthTokenResponse login(final String username, final String rawPassword) {
         final String userKey = username == null ? "" : username.trim();
         final var user = users.findByUsername(userKey)
-                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+                .orElseThrow(() -> new DomainException("Неверный логин или пароль", "INVALID_CREDENTIALS"));
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new BadCredentialsException("Invalid credentials");
+            throw new DomainException("Неверный логин или пароль", "INVALID_CREDENTIALS");
         }
         return tokens.issueAfterLogin(user);
     }

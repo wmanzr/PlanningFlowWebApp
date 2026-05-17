@@ -19,12 +19,16 @@ public record CandidateSnapshot(
         Duration previousTaskDuration,
         Duration workedToday,
         Map<Integer, Double> exactSkillWeights,
-        Map<String, Double> cumulativeCategoryWeights
+        Map<String, Double> cumulativeCategoryWeights,
+        Map<Integer, String> skillIdToCategory
 ) {
     public CandidateSnapshot {
         committedIntervals = committedIntervals == null ? List.of() : List.copyOf(committedIntervals);
         exactSkillWeights = exactSkillWeights == null ? Map.of() : Map.copyOf(exactSkillWeights);
         cumulativeCategoryWeights = cumulativeCategoryWeights == null ? Map.of() : Map.copyOf(cumulativeCategoryWeights);
+        skillIdToCategory = skillIdToCategory == null ? Map.of() : Map.copyOf(skillIdToCategory);
+        workedToday = workedToday == null ? Duration.ZERO : workedToday;
+        previousTaskDuration = previousTaskDuration == null ? Duration.ZERO : previousTaskDuration;
     }
 
     public static CandidateSnapshot empty() {
@@ -36,18 +40,23 @@ public record CandidateSnapshot(
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
+                Map.of(),
                 Map.of()
         );
     }
 
-    public static CandidateSnapshot create(final LocalDateTime occupiedUntil,
+    public static CandidateSnapshot create(
+            final LocalDateTime occupiedUntil,
             final List<ScheduleInterval> committedIntervals,
-            final LocalDateTime previousTaskEndedAt, final GeoPoint previousTaskLocation,
-            final Duration previousTaskDuration, final Duration workedToday,
+            final LocalDateTime previousTaskEndedAt,
+            final GeoPoint previousTaskLocation,
+            final Duration previousTaskDuration,
+            final Duration workedToday,
             final List<UserSkill> rawSkills
     ) {
         final Map<Integer, Double> exact = new HashMap<>();
         final Map<String, Double> maxByCategory = new HashMap<>();
+        final Map<Integer, String> skillIdToCategory = new HashMap<>();
 
         if (rawSkills != null) {
             for (final UserSkill us : rawSkills) {
@@ -57,10 +66,11 @@ public record CandidateSnapshot(
                 final Skill skill = us.getSkill();
                 final double w = Math.clamp(us.getTier().getWeight(), 0.0d, 1.0d);
                 final Integer skillId = skill.getId();
+                final String category = normalizedCategory(skill.getCategory());
                 if (skillId != null) {
                     exact.merge(skillId, w, Math::max);
+                    skillIdToCategory.put(skillId, category);
                 }
-                final String category = normalizedCategory(skill.getCategory());
                 maxByCategory.merge(category, w, Math::max);
             }
         }
@@ -78,8 +88,17 @@ public record CandidateSnapshot(
                 previousTaskDuration,
                 workedToday,
                 Map.copyOf(exact),
-                Map.copyOf(cumulative)
+                Map.copyOf(cumulative),
+                Map.copyOf(skillIdToCategory)
         );
+    }
+
+    public Double geographicDistanceMetersTo(final GeoPoint target) {
+        final GeoPoint from = previousTaskLocation;
+        if (from == null || target == null) {
+            return null;
+        }
+        return from.haversineDistanceMetersTo(target);
     }
 
     public static String normalizedCategory(final String raw) {

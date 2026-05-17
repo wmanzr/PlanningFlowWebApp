@@ -19,9 +19,10 @@ import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { acceptAssignmentThunk, rejectAssignmentThunk, } from '@/store/slices/users/usersSlice';
 import { selectUsersActionMeta } from '@/store/slices/users/selectors';
 import { toastsActions } from '@/store/slices/toasts/toastsSlice';
+import { EventMapPanel } from '@/components/domain/event';
 import { surnameWithInitials } from '@/components/domain/event/EventCard';
 import { SelfOrProfileLink } from '@/components/domain/user/SelfOrProfileLink';
-import { Badge, Button, Card, CardHeader, ErrorMessage, LoadingArea, MapView, Modal, PageLayout, Textarea, formatDateTime, type MapMarker, } from '@/components/ui';
+import { Badge, Button, Card, CardHeader, ErrorMessage, LoadingArea, MapView, Modal, PageLayout, Textarea, formatDateTime, slicePreviewList, type MapMarker, } from '@/components/ui';
 import { TaskAssignMatchingModal, TaskForm, TaskStatusBadge } from '@/components/domain/task';
 import { AllocateResourcesForm, BookingRow } from '@/components/domain/booking';
 import { AssignStatus, TaskStatus, UserRole, type EventId, asAssignmentId, asEventId, asTaskId, asUserId, type TaskCreateRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
@@ -155,10 +156,11 @@ export const TaskDetailPage = () => {
     const bookingsList = useAppSelector(selectBookingsListMeta);
     const selectBookingsForTask = useMemo(() => makeSelectBookingsForTask(taskId), [taskId]);
     const bookingsForTask = useAppSelector(selectBookingsForTask);
-    const bookingsPreviewList = useMemo(() => [...bookingsForTask]
-        .sort((a, b) => a.reservedFrom.localeCompare(b.reservedFrom))
-        .slice(0, 3), [bookingsForTask]);
-    const bookingsMoreCount = Math.max(0, bookingsForTask.length - bookingsPreviewList.length);
+    const bookingsPreview = useMemo(() => {
+        const sorted = [...bookingsForTask].sort((a, b) => a.reservedFrom.localeCompare(b.reservedFrom));
+        return slicePreviewList(sorted);
+    }, [bookingsForTask]);
+    const bookingsMoreCount = bookingsPreview.moreCount;
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isMatchingOpen, setIsMatchingOpen] = useState(false);
     const [isAllocateResourcesOpen, setIsAllocateResourcesOpen] = useState(false);
@@ -208,6 +210,7 @@ export const TaskDetailPage = () => {
                 lng: event.longitude,
                 kind: 'event',
                 label: event.title,
+                emphasis: 'default',
             });
         }
         if (typeof task.latitude === 'number' && typeof task.longitude === 'number') {
@@ -217,6 +220,7 @@ export const TaskDetailPage = () => {
                 lng: task.longitude,
                 kind: 'task',
                 label: task.title,
+                emphasis: 'default',
             });
         }
         return markers;
@@ -310,6 +314,7 @@ export const TaskDetailPage = () => {
     const canStart = task.status === TaskStatus.ASSIGNED;
     const canFinish = task.status === TaskStatus.IN_PROGRESS;
     const canCancel = task.status !== TaskStatus.DONE && task.status !== TaskStatus.CANCELLED;
+    const canEdit = task.status !== TaskStatus.DONE && task.status !== TaskStatus.CANCELLED;
     const showEventActivationHint = !isExecutorView &&
         canStart &&
         event &&
@@ -422,7 +427,7 @@ export const TaskDetailPage = () => {
             {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? (<Typography variant="body2" color="text.secondary">
                 Бронирований нет.
               </Typography>) : (<div className="flex flex-col gap-3">
-                {bookingsPreviewList.map((b) => (<BookingRow key={b.id} booking={b}/>))}
+                {bookingsPreview.preview.map((b) => (<BookingRow key={b.id} booking={b}/>))}
                 {bookingsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
                     и еще {bookingsMoreCount} {bookingsRemainingWord(bookingsMoreCount)}
                   </Typography>) : null}
@@ -433,7 +438,13 @@ export const TaskDetailPage = () => {
         <Card className="overflow-hidden border-border/60 shadow-sm">
           <CardHeader title="Карта" subtitle="Точки мероприятия и задачи (если заданы координаты)"/>
           <div className="px-3 pb-3">
-            <MapView height="280px" zoom={12} {...(mapCenter ? { center: mapCenter } : {})} markers={mapMarkers}/>
+            <MapView
+              height="280px"
+              zoom={12}
+              {...(mapCenter ? { center: mapCenter } : {})}
+              markers={mapMarkers}
+              showLegend={mapMarkers.length > 1}
+            />
           </div>
         </Card>
 
@@ -466,11 +477,11 @@ export const TaskDetailPage = () => {
     }
     return (<PageLayout title={task.title} description={event
             ? `Мероприятие «${event.title}»`
-            : 'Карточка задачи в рамках выбранного мероприятия'} actions={<div className="flex flex-wrap gap-2">
+            : 'Карточка задачи в рамках выбранного мероприятия'} actions={canEdit ? (<div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setIsEditOpen(true)}>
             Редактировать
           </Button>
-        </div>}>
+        </div>) : undefined}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(tasksActions.clearActionError())}/>) : null}
       {showEventActivationHint ? (<Typography variant="body2" color="text.secondary" className="mb-4 max-w-3xl">
           Мероприятие «{event?.title ?? '—'}» в статусе планирования, срок уже начался. После нажатия «В работу» оно
@@ -539,6 +550,8 @@ export const TaskDetailPage = () => {
         </div>
       </Card>
 
+      <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})} />
+
       <Card>
         <CardHeader title={<span className="inline-flex items-center gap-0.5">
               Бронирование ресурсов
@@ -559,7 +572,7 @@ export const TaskDetailPage = () => {
           {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? (<Typography variant="body2" color="text.secondary">
               Бронирований нет — укажите наименование и нажмите «Забронировать ресурс».
             </Typography>) : (<div className="flex flex-col gap-3">
-              {bookingsPreviewList.map((b) => (<BookingRow key={b.id} booking={b}/>))}
+              {bookingsPreview.preview.map((b) => (<BookingRow key={b.id} booking={b}/>))}
               {bookingsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
                   и еще {bookingsMoreCount} {bookingsRemainingWord(bookingsMoreCount)}
                 </Typography>) : null}
@@ -569,7 +582,7 @@ export const TaskDetailPage = () => {
 
       <TaskAssignMatchingModal open={isMatchingOpen} onClose={() => setIsMatchingOpen(false)} taskId={task.id} eventId={eventId} initialPickCount={suggestedMatchingPickCount} onAssigned={() => void dispatch(fetchTaskByIdThunk(task.id))}/>
 
-      <Modal open={isAllocateResourcesOpen} onClose={() => setIsAllocateResourcesOpen(false)} title="Забронировать ресурс" size="md">
+      <Modal open={isAllocateResourcesOpen} onClose={() => setIsAllocateResourcesOpen(false)} title="Забронировать ресурс" size="ml">
         <>
           <CardHeader title={`Задача «${task.title}»`}/>
           <AllocateResourcesForm defaultFrom={task.startTime} defaultTo={task.endTime} {...(event

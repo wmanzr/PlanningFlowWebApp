@@ -94,13 +94,13 @@ class TaskTest {
         void start_execution_requires_assigned_and_dependencies_done() {
             final User creator = DomainFixtures.user(1);
             final Event event = DomainFixtures.event(1, creator);
-            final LocalDateTime depEnd = T0.minusHours(1);
+            final LocalDateTime depEnd = T0.minusMinutes(30);
             final Task dependency = DomainFixtures.taskWithStatus(
                     20,
                     event,
                     creator,
                     TaskStatus.DONE,
-                    depEnd.minusHours(2),
+                    DomainFixtures.EVENT_RANGE_START.plusHours(1),
                     depEnd
             );
             final Task task = new Task(
@@ -228,8 +228,8 @@ class TaskTest {
                     event,
                     creator,
                     TaskStatus.DONE,
-                    T0.minusHours(5),
-                    T0.minusHours(3)
+                    DomainFixtures.EVENT_RANGE_START.plusMinutes(30),
+                    DomainFixtures.EVENT_RANGE_START.plusHours(2)
             );
             final Task task = new Task(
                     10,
@@ -255,12 +255,33 @@ class TaskTest {
     class Schedule {
 
         @Test
+        void constructor_schedule_outside_event_rejected() {
+            final User creator = DomainFixtures.user(1);
+            final Event event = DomainFixtures.event(1, creator);
+
+            assertThatThrownBy(() -> new Task(
+                    10,
+                    event,
+                    creator,
+                    "Early task",
+                    TaskStatus.OPEN,
+                    DomainFixtures.EVENT_RANGE_START.minusHours(1),
+                    DomainFixtures.EVENT_RANGE_START.plusHours(1),
+                    null,
+                    java.util.List.of(),
+                    java.util.List.of()
+            ))
+                    .isInstanceOf(DomainException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "TASK_OUT_OF_EVENT_RANGE");
+        }
+
+        @Test
         void move_schedule_outside_event_rejected() {
             final User creator = DomainFixtures.user(1);
             final Event event = DomainFixtures.event(1, creator);
             final Task task = DomainFixtures.openTask(10, event, creator, T0, T1);
 
-            assertThatThrownBy(() -> task.moveSchedule(DomainFixtures.EVENT_RANGE_START.minusDays(1), T1))
+            assertThatThrownBy(() -> task.moveSchedule(DomainFixtures.EVENT_RANGE_START.minusHours(1), T0))
                     .isInstanceOf(DomainException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "TASK_OUT_OF_EVENT_RANGE");
         }

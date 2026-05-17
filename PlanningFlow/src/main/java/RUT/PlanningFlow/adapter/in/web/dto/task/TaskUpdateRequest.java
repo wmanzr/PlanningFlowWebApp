@@ -31,6 +31,8 @@ public class TaskUpdateRequest {
 
     private List<@Positive(message = "ID зависимости должен быть положительным") Integer> dependencyIds;
 
+    private Boolean clearLocation;
+
     public TaskUpdateRequest() {
     }
 
@@ -116,5 +118,13 @@ public class TaskUpdateRequest {
 
     public void setDependencyIds(final List<Integer> dependencyIds) {
         this.dependencyIds = dependencyIds;
+    }
+
+    public Boolean getClearLocation() {
+        return clearLocation;
+    }
+
+    public void setClearLocation(final Boolean clearLocation) {
+        this.clearLocation = clearLocation;
     }
 }

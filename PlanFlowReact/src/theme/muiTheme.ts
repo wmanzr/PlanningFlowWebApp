@@ -92,13 +92,57 @@ export function buildMuiTheme(mode: ThemeMode) {
             MuiButton: {
                 defaultProps: { disableElevation: true },
                 styleOverrides: {
-                    root: {
+                    root: ({ theme }) => ({
                         borderRadius: 10,
                         '&.Mui-disabled': { opacity: 0.5 },
-                    },
-                    sizeMedium: { height: 40, padding: '0 16px', fontSize: '0.875rem' },
-                    sizeSmall: { height: 32, padding: '0 12px', fontSize: '0.875rem' },
-                    sizeLarge: { height: 48, padding: '0 20px', fontSize: '1rem' },
+                        [theme.breakpoints.down('sm')]: {
+                            minHeight: 'unset',
+                        },
+                    }),
+                    sizeMedium: ({ theme }) => ({
+                        height: 40,
+                        padding: '0 16px',
+                        fontSize: '0.875rem',
+                        [theme.breakpoints.down('sm')]: {
+                            height: 34,
+                            padding: '0 12px',
+                            fontSize: '0.8125rem',
+                        },
+                    }),
+                    sizeSmall: ({ theme }) => ({
+                        height: 32,
+                        padding: '0 12px',
+                        fontSize: '0.875rem',
+                        [theme.breakpoints.down('sm')]: {
+                            height: 28,
+                            padding: '0 10px',
+                            fontSize: '0.75rem',
+                        },
+                    }),
+                    sizeLarge: ({ theme }) => ({
+                        height: 48,
+                        padding: '0 20px',
+                        fontSize: '1rem',
+                        [theme.breakpoints.down('sm')]: {
+                            height: 38,
+                            padding: '0 14px',
+                            fontSize: '0.875rem',
+                        },
+                    }),
+                },
+            },
+            MuiIconButton: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        [theme.breakpoints.down('sm')]: {
+                            padding: 6,
+                        },
+                    }),
+                    sizeSmall: ({ theme }) => ({
+                        [theme.breakpoints.down('sm')]: {
+                            padding: 4,
+                        },
+                    }),
                 },
             },
             MuiTextField: {

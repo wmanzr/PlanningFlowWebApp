@@ -60,8 +60,8 @@ class WeightedScoreCandidateFilterPropertiesTest {
                 Duration.ZERO,
                 Duration.ofMinutes((long) (workedHours * 60.0)),
                 exact,
-                Map.of("medical", skillExact)
-        );
+                Map.of("medical", skillExact),
+                Map.of());
 
         final Duration maxDaily = Duration.ofMinutes((long) (maxDailyHours * 60.0));
         final WorkloadPolicy policy = DomainFixtures.workloadPolicy(maxDaily, Duration.ofMinutes(10));

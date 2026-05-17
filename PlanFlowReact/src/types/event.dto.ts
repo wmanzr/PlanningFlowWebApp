@@ -49,6 +49,7 @@ export interface EventUpdateRequest {
     endDate?: IsoDateTime;
     latitude?: number;
     longitude?: number;
+    clearLocation?: boolean;
     coordinatorIds?: UserId[];
 }
 export interface EventCancelRequest {

@@ -36,6 +36,8 @@ public class EventUpdateRequest {
 
     private List<@Positive(message = "Идентификатор координатора должен быть положительным") Integer> coordinatorIds;
 
+    private Boolean clearLocation;
+
     public EventUpdateRequest() {
     }
 
@@ -133,5 +135,13 @@ public class EventUpdateRequest {
 
     public void setCoordinatorIds(final List<Integer> coordinatorIds) {
         this.coordinatorIds = coordinatorIds;
+    }
+
+    public Boolean getClearLocation() {
+        return clearLocation;
+    }
+
+    public void setClearLocation(final Boolean clearLocation) {
+        this.clearLocation = clearLocation;
     }
 }

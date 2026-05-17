@@ -7,7 +7,7 @@ const TONE_MAP: Record<TaskStatus, NonNullable<BadgeProps['tone']>> = {
     [TaskStatus.DONE]: 'success',
     [TaskStatus.CANCELLED]: 'danger',
 };
-const LABEL_MAP: Record<TaskStatus, string> = {
+export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
     [TaskStatus.OPEN]: 'Открыта',
     [TaskStatus.ASSIGNED]: 'Назначена',
     [TaskStatus.IN_PROGRESS]: 'В работе',
@@ -17,4 +17,4 @@ const LABEL_MAP: Record<TaskStatus, string> = {
 export interface TaskStatusBadgeProps {
     status: TaskStatus;
 }
-export const TaskStatusBadge = ({ status }: TaskStatusBadgeProps) => (<Badge tone={TONE_MAP[status]}>{LABEL_MAP[status]}</Badge>);
+export const TaskStatusBadge = ({ status }: TaskStatusBadgeProps) => (<Badge tone={TONE_MAP[status]}>{TASK_STATUS_LABEL[status]}</Badge>);

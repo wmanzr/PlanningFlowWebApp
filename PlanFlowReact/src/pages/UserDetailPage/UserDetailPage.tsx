@@ -5,7 +5,7 @@ import { fetchUserByIdThunk, fetchUserSkillsThunk, fetchUserViewerContextThunk, 
 import { selectUserById, selectUsersSkillsState, selectUsersViewerContextState, } from '@/store/slices/users/selectors';
 import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { UserActivityReadOnly } from '@/components/domain/user';
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorMessage, LoadingArea, PageLayout, formatDateTime, } from '@/components/ui';
+import { Badge, Button, Card, CardHeader, EmailLink, EmptyState, ErrorMessage, LoadingArea, PageLayout, formatDateTime, } from '@/components/ui';
 import { SkillTier, UserRole, asEventId, asUserId, type UserRole as UserRoleType } from '@/types';
 import { NotFoundPage } from '../NotFoundPage';
 import { PATHS } from '../paths';
@@ -67,7 +67,7 @@ export const UserDetailPage = () => {
         {user ? (<Card>
             <CardHeader title="Контакт"/>
             <div className="flex flex-col gap-2 text-sm">
-              <p className="text-paragraph">{user.email}</p>
+              <EmailLink email={user.email} className="text-sm font-normal text-paragraph"/>
               <div className="flex flex-wrap gap-1.5">
                 {user.roles.map((r) => (<Badge key={r} tone="neutral" outline>
                     {ROLE_LABELS[r] ?? r}
@@ -170,10 +170,10 @@ export const UserDetailPage = () => {
                 </Card>) : null}
             </>) : null}
 
-          {!sessionIsAdmin && !sessionIsOrganizer && viewerCtx.data.organizerCoordinatorEvents.length > 0 ? (<Card padded={false}>
-              <CardHeader title="Совместные мероприятия" subtitle="Вы участник задач, этот пользователь — координатор."/>
-              <ul className="divide-y divide-stroke">
-                {viewerCtx.data.organizerCoordinatorEvents.map((ev) => (<li key={ev.eventId} className="px-5 py-4">
+          {!sessionIsAdmin && !sessionIsOrganizer && viewerCtx.data.organizerCoordinatorEvents.length > 0 ? (<Card>
+              <CardHeader title="Совместные мероприятия"/>
+              <ul className="flex flex-col gap-4">
+                {viewerCtx.data.organizerCoordinatorEvents.map((ev) => (<li key={ev.eventId}>
                     <Link className="font-medium text-headline hover:underline" to={PATHS.eventDetail(asEventId(ev.eventId))}>
                       {ev.title}
                     </Link>

@@ -120,9 +120,15 @@ export const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
     return (<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, bgcolor: 'background.paper' }}>
       {isDesktop && (<>
           <Box sx={{ px: 2.5, py: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', textDecoration: 'none', display: 'block' }} component={NavLink} to={brandTo} onClick={onNavigate}>
-              PlanFlow
-            </Typography>
+            <NavLink
+              to={brandTo}
+              onClick={onNavigate}
+              style={{ textDecoration: 'none', display: 'inline-block', width: 'fit-content' }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                PlanFlow
+              </Typography>
+            </NavLink>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
               Планирование мероприятий
             </Typography>

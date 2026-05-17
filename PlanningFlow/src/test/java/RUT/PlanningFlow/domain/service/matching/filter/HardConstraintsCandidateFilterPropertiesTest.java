@@ -55,8 +55,8 @@ class HardConstraintsCandidateFilterPropertiesTest {
                 Duration.ZERO,
                 Duration.ofMillis(workedMillis),
                 Map.of(7, 1.0d),
-                categories
-        );
+                categories,
+                Map.of());
 
         final Duration gap = Duration.ofMillis(Math.abs(gapMillis));
         final Duration maxDaily = Duration.ofMillis(Math.max(1L, maxDailyMillis));

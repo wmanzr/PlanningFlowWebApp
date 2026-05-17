@@ -14,6 +14,7 @@ public interface UpdateTaskUseCase {
             LocalDateTime newStartTime,
             LocalDateTime newEndTime,
             GeoPoint newLocation,
+            boolean clearLocation,
             List<Integer> requiredSkillIds,
             List<Integer> dependencyIds
     );

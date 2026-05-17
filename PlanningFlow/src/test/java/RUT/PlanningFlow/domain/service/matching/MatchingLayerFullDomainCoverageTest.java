@@ -60,8 +60,8 @@ class MatchingLayerFullDomainCoverageTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final MatchingContext ctx = DomainFixtures.matchingContext(T0.minusHours(1), DomainFixtures.defaultEventMode(), Map.of(1, snap));
 
         assertThat(geo.evaluate(task, snap, ctx)).isEqualTo(0.5);
@@ -81,8 +81,8 @@ class MatchingLayerFullDomainCoverageTest {
                 Duration.ZERO,
                 max,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final WorkloadPolicy policy = DomainFixtures.workloadPolicy(max, Duration.ofMinutes(10));
         final EventMode mode = DomainFixtures.eventMode(MatchingMode.STANDARD, MatchingDistance.BUILDING_SCALE, policy);
         final MatchingContext ctx = DomainFixtures.matchingContext(T0.minusHours(1), mode, Map.of(1, snap));
@@ -105,8 +105,8 @@ class MatchingLayerFullDomainCoverageTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of("medical", 1.0)
-        );
+                Map.of("medical", 1.0),
+                Map.of());
         final EventMode defaults = DomainFixtures.defaultEventMode();
         final EventMode criticalMode = DomainFixtures.eventMode(
                 MatchingMode.CRITICAL,

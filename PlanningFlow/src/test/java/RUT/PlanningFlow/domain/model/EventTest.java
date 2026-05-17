@@ -166,9 +166,15 @@ class EventTest {
         void validate_task_attach_outside_schedule() {
             final User creator = DomainFixtures.user(1);
             final Event event = DomainFixtures.event(1, creator);
-            final Task task = DomainFixtures.openTask(10, event, creator, DomainFixtures.EVENT_RANGE_START.minusHours(1), T1);
 
-            assertThatThrownBy(() -> event.validateTaskAttach(task))
+            assertThatThrownBy(() -> DomainFixtures.openTask(
+                    10,
+                    event,
+                    creator,
+                    DomainFixtures.EVENT_RANGE_START.minusHours(1),
+                    DomainFixtures.EVENT_RANGE_START.plusHours(1)
+            ))
+                    .isInstanceOf(DomainException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "TASK_OUT_OF_EVENT_RANGE");
         }
 

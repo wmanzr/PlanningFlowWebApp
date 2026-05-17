@@ -44,19 +44,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
 
-                        
                         .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").authenticated()
 
-                        
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/status/**").authenticated()
-
                         
                         .requestMatchers(HttpMethod.POST, "/api/v1/events/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.PUT, "/api/v1/events/**").hasAnyRole(PLANNER_ROLES)
-
                         
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.PUT, "/api/v1/tasks/**").hasAnyRole(PLANNER_ROLES)
@@ -64,24 +60,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/tasks/*/assignments/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/matching").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/resources/allocate").hasAnyRole(PLANNER_ROLES)
-
                         
                         .requestMatchers(HttpMethod.GET, "/api/v1/users").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/*/viewer-context").authenticated()
-
                         
                         .requestMatchers(HttpMethod.PUT, "/api/v1/bookings/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings/*/status/**").hasAnyRole(PLANNER_ROLES)
 
-                        
                         .requestMatchers(HttpMethod.POST, "/api/v1/incidents/*/accept").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/incidents/*/resolve").hasAnyRole(PLANNER_ROLES)
-
                         
                         .requestMatchers(HttpMethod.POST, "/api/v1/skills").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/skills/*").hasAnyRole(PLANNER_ROLES)
 
-                        
                         .requestMatchers(HttpMethod.POST, "/api/v1/resources/internal")
                         .hasAnyRole(INTERNAL_RESOURCE_CREATE_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/resources/internal/**")

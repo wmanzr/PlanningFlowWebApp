@@ -8,7 +8,7 @@ export const RequireAuth = () => {
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
     const initialised = useAppSelector(selectAuthInitialised);
     if (!initialised) {
-        return <LoadingArea label="Восстанавливаем сессию"/>;
+        return <LoadingArea label="Восстанавливаем соединение"/>;
     }
     if (!isAuthenticated) {
         return <Navigate to={PATHS.login} replace state={{ from: location.pathname }}/>;

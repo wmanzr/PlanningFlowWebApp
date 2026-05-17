@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -102,10 +103,30 @@ class CandidateSnapshotTest {
                 Duration.ZERO,
                 null,
                 null,
-                null
-        );
+                null,
+                Map.of());
 
         assertThat(snapshot.exactSkillWeights()).isEmpty();
         assertThat(snapshot.cumulativeCategoryWeights()).isEmpty();
+        assertThat(snapshot.skillIdToCategory()).isEmpty();
+    }
+
+    @Test
+    void create_populates_skill_id_to_category() {
+        final User user = DomainFixtures.user(1);
+        final Skill skill = DomainFixtures.skill(4, "Lift", "Safety");
+        final UserSkill us = new UserSkill(1, user, skill, SkillTier.EXPERT, null);
+
+        final CandidateSnapshot snapshot = CandidateSnapshot.create(
+                null,
+                List.of(),
+                null,
+                null,
+                Duration.ZERO,
+                Duration.ZERO,
+                List.of(us)
+        );
+
+        assertThat(snapshot.skillIdToCategory()).containsEntry(4, "safety");
     }
 }

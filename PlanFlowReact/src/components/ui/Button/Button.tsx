@@ -19,9 +19,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, v
                 height: 40,
                 borderRadius: '10px',
                 color: theme.app.headline,
+                [theme.breakpoints.down('sm')]: {
+                    width: 34,
+                    height: 34,
+                },
                 ...(block ? { width: '100%' } : {}),
             }} {...(rest as Record<string, unknown>)}>
-          {loading ? <CircularProgress size={18} color="inherit"/> : children}
+          {loading ? <CircularProgress size={18} color="inherit" sx={{ [theme.breakpoints.down('sm')]: { width: 16, height: 16 } }}/> : children}
         </MuiIconButton>);
     }
     const muiVariant = variant === 'primary' || variant === 'danger'
@@ -58,7 +62,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, v
     if (block) {
         sxOverrides.width = '100%';
     }
-    return (<MuiButton ref={ref} variant={muiVariant} size={muiSize} disabled={disabled || loading} className={className} type={type ?? 'button'} disableRipple={variant === 'link'} sx={sxOverrides} startIcon={loading ? <CircularProgress size={16} color="inherit"/> : undefined} {...(rest as Record<string, unknown>)}>
+    const loadingSpinnerSize = size === 'lg' ? 18 : size === 'sm' ? 14 : 16;
+    return (<MuiButton ref={ref} variant={muiVariant} size={muiSize} disabled={disabled || loading} className={className} type={type ?? 'button'} disableRipple={variant === 'link'} sx={sxOverrides} startIcon={loading ? (<CircularProgress size={loadingSpinnerSize} color="inherit" sx={{ [theme.breakpoints.down('sm')]: { width: loadingSpinnerSize - 2, height: loadingSpinnerSize - 2 } }}/>) : undefined} {...(rest as Record<string, unknown>)}>
         {children}
       </MuiButton>);
 });

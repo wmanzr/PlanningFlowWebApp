@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Task {
-
     private static final Duration MAX_TASK_DURATION = Duration.ofHours(8);
-
     private final Integer id;
     private Event event;
     private final User createdBy;
@@ -54,21 +52,34 @@ public class Task {
         this.location = location;
         this.requiredSkills = requiredSkills == null ? new ArrayList<>() : new ArrayList<>(requiredSkills);
         this.dependencies = dependencies == null ? new ArrayList<>() : new ArrayList<>(dependencies);
+        assertScheduleDurationAllowed(startTime, endTime);
+        validateScheduleWithinEvent();
+    }
+
+    public void assertAllowsPlannerMutations() {
+        if (status == TaskStatus.DONE || status == TaskStatus.CANCELLED) {
+            throw new DomainException(
+                    "Завершенная или отмененная задача не может быть изменена",
+                    "TASK_CLOSED_FOR_EDIT"
+            );
+        }
     }
 
     public void rename(final String newTitle) {
+        assertAllowsPlannerMutations();
         DomainAssert.notBlank(newTitle, "Название задачи обязательно", "TASK_TITLE_REQUIRED");
         this.title = newTitle;
     }
 
     public void moveSchedule(final LocalDateTime newStartTime, final LocalDateTime newEndTime) {
-        if (event != null) {
-            if (newStartTime.isBefore(event.getStartDate()) || newEndTime.isAfter(event.getEndDate())) {
-                throw new DomainException("Время задачи выходит за временные рамки мероприятия", "TASK_OUT_OF_EVENT_RANGE");
-            }
-        }
+        assertAllowsPlannerMutations();
         assertScheduleDurationAllowed(newStartTime, newEndTime);
         this.schedule = new DateTimeRange(newStartTime, newEndTime);
+        validateScheduleWithinEvent();
+    }
+
+    void assertScheduleWithinEventRange(final LocalDateTime eventStart, final LocalDateTime eventEnd) {
+        validateScheduleWithinEvent(eventStart, eventEnd);
     }
 
     
@@ -79,15 +90,38 @@ public class Task {
         }
     }
 
+    private void validateScheduleWithinEvent() {
+        if (event == null) {
+            return;
+        }
+        validateScheduleWithinEvent(event.getStartDate(), event.getEndDate());
+    }
+
+    private void validateScheduleWithinEvent(final LocalDateTime eventStart, final LocalDateTime eventEnd) {
+        final LocalDateTime from = schedule.getStart();
+        final LocalDateTime to = schedule.getEnd();
+        if (eventStart != null && eventEnd != null) {
+            if (from.isBefore(eventStart) || to.isAfter(eventEnd)) {
+                throw new DomainException(
+                        "Время задачи выходит за временные рамки мероприятия",
+                        "TASK_OUT_OF_EVENT_RANGE"
+                );
+            }
+        }
+    }
+
     public void updateLocation(final GeoPoint newLocation) {
+        assertAllowsPlannerMutations();
         this.location = newLocation;
     }
 
     public void clearLocation() {
+        assertAllowsPlannerMutations();
         this.location = null;
     }
 
     public void addRequiredSkill(final Skill skill) {
+        assertAllowsPlannerMutations();
         DomainAssert.notNull(skill, "Требуемый навык обязателен", "REQUIRED_SKILL_REQUIRED");
         DomainAssert.notNull(skill.getId(), "Требуемый навык должен иметь id", "REQUIRED_SKILL_ID_REQUIRED");
         final boolean exists = requiredSkills.stream().anyMatch(item -> Objects.equals(item.getId(), skill.getId()));
@@ -98,28 +132,40 @@ public class Task {
     }
 
     public void removeRequiredSkill(final Skill skill) {
+        assertAllowsPlannerMutations();
         DomainAssert.notNull(skill, "Требуемый навык обязателен", "REQUIRED_SKILL_REQUIRED");
         DomainAssert.notNull(skill.getId(), "Требуемый навык должен иметь id", "REQUIRED_SKILL_ID_REQUIRED");
         requiredSkills.removeIf(item -> Objects.equals(item.getId(), skill.getId()));
     }
 
     public void addDependency(final Task dependency) {
-        DomainAssert.notNull(dependency, "Зависимость задачи обязательна", "DEPENDENCY_REQUIRED");
-        DomainAssert.notNull(dependency.getId(), "Зависимость должна иметь id", "DEPENDENCY_ID_REQUIRED");
+        assertAllowsPlannerMutations();
+        DomainAssert.notNull(dependency, "Родительская задача обязательна", "DEPENDENCY_REQUIRED");
+        DomainAssert.notNull(dependency.getId(), "Родительская задача должна иметь id", "DEPENDENCY_ID_REQUIRED");
         if (this.event != null && dependency.getEvent() != null && !this.event.equals(dependency.getEvent())) {
-            throw new DomainException("Зависимость должна относиться к тому же мероприятию", "DEPENDENCY_WRONG_EVENT");
+            throw new DomainException("Родительская задача должна относиться к тому же мероприятию", "DEPENDENCY_WRONG_EVENT");
         }
         if (java.util.Objects.equals(this.id, dependency.getId())) {
-            throw new DomainException("Задача не может зависеть сама от себя", "SELF_DEPENDENCY_NOT_ALLOWED");
+            throw new DomainException("Задача не может зависеть от самой себя", "SELF_DEPENDENCY_NOT_ALLOWED");
         }
         if (dependsOn(dependency, this)) {
-            throw new DomainException("Нельзя создать циклическую зависимость задач", "CYCLIC_DEPENDENCY_NOT_ALLOWED");
+            throw new DomainException("Нельзя создать циклическую связь с родительской задачей", "CYCLIC_DEPENDENCY_NOT_ALLOWED");
         }
 
         final LocalDateTime start = this.getStartTime();
+        final LocalDateTime end = this.getEndTime();
         final LocalDateTime dependencyEnd = dependency.getEndTime();
         if (start != null && dependencyEnd != null && start.isBefore(dependencyEnd)) {
-            throw new DomainException("Задача не может начаться раньше завершения зависимости", "DEPENDENCY_SCHEDULE_CONFLICT");
+            throw new DomainException(
+                    "Задача не может начаться раньше завершения родительской задачи",
+                    "DEPENDENCY_SCHEDULE_CONFLICT"
+            );
+        }
+        if (end != null && dependencyEnd != null && !dependencyEnd.isBefore(end)) {
+            throw new DomainException(
+                    "Родительская задача должна завершиться раньше текущей",
+                    "DEPENDENCY_END_NOT_BEFORE_TASK_END"
+            );
         }
         final boolean exists = dependencies.stream().anyMatch(item -> Objects.equals(item.getId(), dependency.getId()));
         if (exists) {
@@ -129,8 +175,9 @@ public class Task {
     }
 
     public void removeDependency(final Task dependency) {
-        DomainAssert.notNull(dependency, "Зависимость задачи обязательна", "DEPENDENCY_REQUIRED");
-        DomainAssert.notNull(dependency.getId(), "Зависимость должна иметь id", "DEPENDENCY_ID_REQUIRED");
+        assertAllowsPlannerMutations();
+        DomainAssert.notNull(dependency, "Родительская задача обязательна", "DEPENDENCY_REQUIRED");
+        DomainAssert.notNull(dependency.getId(), "Родительская задача должна иметь id", "DEPENDENCY_ID_REQUIRED");
         dependencies.removeIf(item -> item != null && Objects.equals(item.getId(), dependency.getId()));
     }
 

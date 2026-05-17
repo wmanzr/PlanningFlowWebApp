@@ -48,6 +48,7 @@ public class TaskMatchingService implements MatchTaskUseCase {
     private final TaskRepositoryPort taskRepository;
     private final UserRepositoryPort userRepository;
     private final AssignmentRepositoryPort assignmentRepository;
+    private final MatchTaskResponseMapper responseMapper = new MatchTaskResponseMapper();
     private final MatchingEngine matchingEngine = new MatchingEngine();
 
     public TaskMatchingService(
@@ -80,12 +81,13 @@ public class TaskMatchingService implements MatchTaskUseCase {
 
         final LocalDateTime matchingInstant = LocalDateTime.now();
         final LocalDate workloadDay = task.getStartTime().toLocalDate();
-        final Map<Integer, CandidateSnapshot> snapshots = buildSnapshots(
+        final SnapshotData snapshotData = buildSnapshotData(
                 candidates,
                 workloadDay,
                 matchingInstant,
                 task.getId()
         );
+        final Map<Integer, CandidateSnapshot> snapshots = snapshotData.snapshots();
 
         final MatchingContext standardContext = new MatchingContext(
                 matchingInstant,
@@ -97,7 +99,7 @@ public class TaskMatchingService implements MatchTaskUseCase {
         final MatchingResult standard = matchingEngine.match(task, candidates, requiredCount, standardContext);
         if (!standard.hasShortage() || mode.matchingMode() == MatchingMode.CRITICAL) {
             final List<RankedCandidate> ranked = assignSequentialRanks(standard.rankedCandidates());
-            return MatchTaskResponseDto.from(
+            return responseMapper.toResponse(
                     task,
                     requiredCount,
                     mode,
@@ -126,7 +128,7 @@ public class TaskMatchingService implements MatchTaskUseCase {
         );
         final int mergedShortage = Math.max(0, requiredCount - mergedRanked.size());
 
-        return MatchTaskResponseDto.from(
+        return responseMapper.toResponse(
                 task,
                 requiredCount,
                 mode,
@@ -135,6 +137,9 @@ public class TaskMatchingService implements MatchTaskUseCase {
                 mergedShortage,
                 snapshots
         );
+    }
+
+    private record SnapshotData(Map<Integer, CandidateSnapshot> snapshots) {
     }
 
     private Set<Integer> userIdsWithActiveAssignmentOnTask(final Integer taskId) {
@@ -201,7 +206,7 @@ public class TaskMatchingService implements MatchTaskUseCase {
         return List.copyOf(out);
     }
 
-    private Map<Integer, CandidateSnapshot> buildSnapshots(
+    private SnapshotData buildSnapshotData(
             final List<User> candidates,
             final LocalDate workloadDay,
             final LocalDateTime matchingInstant,
@@ -233,7 +238,7 @@ public class TaskMatchingService implements MatchTaskUseCase {
             );
             snapshots.put(userId, snapshot);
         }
-        return Map.copyOf(snapshots);
+        return new SnapshotData(Map.copyOf(snapshots));
     }
 
     private static CandidateTemporalSnapshot computeTemporalSnapshot(

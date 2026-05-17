@@ -181,7 +181,7 @@ export const LandingPage = () => {
           </div>
 
           <div className="mx-auto mt-7 flex max-w-xl flex-col items-center md:mt-9">
-            <Button size="lg" className="!min-h-[52px] !rounded-full !px-12 !py-3 !text-lg font-semibold !leading-snug shadow-xl md:!min-h-[58px] md:!px-16 md:!py-4 md:!text-xl" style={{
+            <Button size="lg" className="!min-h-0 !rounded-full !px-8 !py-2 !text-base font-semibold !leading-snug shadow-xl sm:!px-10 sm:!text-lg md:!px-16 md:!py-4 md:!text-xl" style={{
                 background: `linear-gradient(135deg, ${app.button} 0%, ${app.accent} 100%)`,
                 boxShadow: `0 16px 48px ${app.accentSoft}`,
             }} onClick={() => navigate(PATHS.auth)}>

@@ -1,1 +1,0 @@
-export { EventMapPage } from './EventMapPage';

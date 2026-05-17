@@ -15,7 +15,11 @@ export const formatDistanceMeters = (meters: number): string => {
     if (meters < METERS_IN_KM)
         return `${Math.round(meters)} м`;
     const km = meters / METERS_IN_KM;
-    return Number.isInteger(km) ? `${km} км` : `${km.toFixed(1)} км`;
+    const rounded = Math.round(km);
+    if (Math.abs(km - rounded) < 0.05) {
+        return `${rounded} км`;
+    }
+    return `${km.toFixed(1)} км`;
 };
 export const describeMatchingDistance = (meters: number | undefined): string => {
     if (meters === undefined || meters <= 0)
@@ -47,13 +51,14 @@ export interface ExecutorMatchingCardProps {
 export const ExecutorMatchingCard = ({ fullName, username, matchedSkillIds, distanceMeters, workedTodayMinutes, maxDailyLoadMinutes, algorithmMiss = false, profileTo, rankBadge, actions, selectable = false, selected = false, onToggleSelect, selectionAddDisabled = false, blockedSelectionTooltip, }: ExecutorMatchingCardProps) => {
     const skills = useAppSelector(selectAllSkills);
     const skillNameById = useMemo(() => new Map(skills.map((s) => [s.id, s.name] as const)), [skills]);
-    const hasMetrics = !algorithmMiss &&
-        workedTodayMinutes !== undefined &&
-        maxDailyLoadMinutes !== undefined;
-    const loadPercent = hasMetrics && maxDailyLoadMinutes > 0
-        ? Math.min(100, Math.round((workedTodayMinutes / maxDailyLoadMinutes) * 100))
-        : 0;
+    const skillIdsToShow = matchedSkillIds;
     const distanceLabel = distanceMeters !== undefined && distanceMeters > 0 ? formatDistanceMeters(distanceMeters) : '';
+    const hasMetrics =
+        !algorithmMiss && workedTodayMinutes !== undefined && maxDailyLoadMinutes !== undefined;
+    const loadPercent =
+        hasMetrics && maxDailyLoadMinutes > 0
+            ? Math.min(100, Math.round((workedTodayMinutes / maxDailyLoadMinutes) * 100))
+            : 0;
     const leftBlock = (<div className="min-w-0">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
         {rankBadge}
@@ -64,27 +69,47 @@ export const ExecutorMatchingCard = ({ fullName, username, matchedSkillIds, dist
       <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.25, display: 'block' }}>
         @{username}
       </Typography>
-      {matchedSkillIds.length > 0 ? (<div className="mt-1 flex flex-wrap gap-1">
-          {matchedSkillIds.map((id) => (<Badge key={id} tone="info">
+      {skillIdsToShow.length > 0 ? (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {skillIdsToShow.map((id) => (
+            <Badge key={id} tone="neutral">
               {skillNameById.get(id) ?? 'Навык'}
-            </Badge>))}
-        </div>) : null}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
     </div>);
     const rightBlock = (<div className="flex max-w-[13rem] shrink-0 flex-col items-end gap-1 text-right">
-      {algorithmMiss ? (<Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+      {algorithmMiss ? (
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
           Данные подбора недоступны
-        </Typography>) : (<>
-          {distanceLabel ? (<Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }} className="font-medium">
+        </Typography>
+      ) : (
+        <>
+          {distanceLabel ? (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem' }}
+              className="font-medium"
+            >
               {distanceLabel}
-            </Typography>) : null}
-          {hasMetrics ? (<>
+            </Typography>
+          ) : null}
+          {hasMetrics ? (
+            <>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                Сегодня: {formatWorkedHours(workedTodayMinutes)} из лимита{' '}
-                {formatWorkedHours(maxDailyLoadMinutes)}
+                Сегодня: {formatWorkedHours(workedTodayMinutes)} из {formatWorkedHours(maxDailyLoadMinutes)}
               </Typography>
-              <LinearProgress variant="determinate" value={loadPercent} sx={{ width: '100%', maxWidth: 168, height: 4, borderRadius: 1 }}/>
-            </>) : null}
-        </>)}
+              <LinearProgress
+                variant="determinate"
+                value={loadPercent}
+                sx={{ width: '100%', maxWidth: 168, height: 4, borderRadius: 1 }}
+              />
+            </>
+          ) : null}
+        </>
+      )}
       {actions ? <div className="mt-0.5 flex flex-col items-end gap-1">{actions}</div> : null}
     </div>);
     const cardSurfaceClass = blockedSelectionTooltip

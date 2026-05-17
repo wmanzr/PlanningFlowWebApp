@@ -184,6 +184,7 @@ public class TaskController {
                 request.getNewStartTime(),
                 request.getNewEndTime(),
                 newLocation,
+                Boolean.TRUE.equals(request.getClearLocation()),
                 request.getRequiredSkillIds(),
                 request.getDependencyIds()
         );

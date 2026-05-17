@@ -8,9 +8,10 @@ import { selectEventActionMeta, selectEventsListMeta, } from '@/store/slices/eve
 import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { fetchUsersThunk } from '@/store/slices/users/usersSlice';
 import { selectAllUsers } from '@/store/slices/users/selectors';
-import { Button, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Pagination, } from '@/components/ui';
-import { EventCard, EventForm } from '@/components/domain/event';
-import { UserRole, asEventId, type AppApiError, type EventCreateRequest, type EventResponseDto, type EventUpdateRequest, } from '@/types';
+import { Button, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Pagination, Select, } from '@/components/ui';
+import { EventCard, EventForm, EVENT_STATUS_LABEL } from '@/components/domain/event';
+import { EventStatus, UserRole, asEventId, type AppApiError, type EventCreateRequest, type EventResponseDto, type EventUpdateRequest, } from '@/types';
+import { buildStatusFilterOptions } from '@/utils/statusFilterOptions';
 import { validationErrorsToToastMessage } from '@/utils/validationErrorsToToastMessage';
 import { PATHS } from '../paths';
 const PAGE_SIZE = 20;
@@ -23,7 +24,9 @@ export const EventsListPage = () => {
     const allUsers = useAppSelector(selectAllUsers);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [titleSearch, setTitleSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<EventStatus | ''>('');
     const [page, setPage] = useState(1);
+    const statusFilterOptions = useMemo(() => buildStatusFilterOptions(EVENT_STATUS_LABEL), []);
     const [items, setItems] = useState<EventResponseDto[]>([]);
     const canCreate = !!currentUser &&
         (currentUser.roles.includes(UserRole.ADMIN) || currentUser.roles.includes(UserRole.ORGANIZER));
@@ -64,9 +67,19 @@ export const EventsListPage = () => {
         void dispatch(fetchUsersThunk({ page: 1, size: 400 }));
     }, [dispatch, currentUser]);
     const userNameById = useMemo(() => new Map(allUsers.map((u) => [u.id, u.fullName] as const)), [allUsers]);
-    const sortedEvents = useMemo(() => [...items].sort((a, b) => b.startDate.localeCompare(a.startDate)), [items]);
+    const sortedEvents = useMemo(() => {
+        const sorted = [...items].sort((a, b) => b.startDate.localeCompare(a.startDate));
+        if (!statusFilter) {
+            return sorted;
+        }
+        return sorted.filter((event) => event.status === statusFilter);
+    }, [items, statusFilter]);
     const handleTitleChange = (value: string) => {
         setTitleSearch(value);
+        setPage(1);
+    };
+    const handleStatusFilterChange = (value: string) => {
+        setStatusFilter(value === '' ? '' : (value as EventStatus));
         setPage(1);
     };
     const handleCreate = (payload: EventCreateRequest | EventUpdateRequest) => {
@@ -96,13 +109,18 @@ export const EventsListPage = () => {
             Создать мероприятие
           </Button>) : null}>
       <div className="mb-4 grid gap-3 md:grid-cols-2">
-        <Input className="md:col-span-2" label="Поиск по названию" placeholder="например, городской фестиваль" value={titleSearch} onChange={(e: ChangeEvent<HTMLInputElement>) => handleTitleChange(e.target.value)}/>
+        <Input label="Поиск по названию" placeholder="например, городской фестиваль" value={titleSearch} onChange={(e: ChangeEvent<HTMLInputElement>) => handleTitleChange(e.target.value)}/>
+        <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => handleStatusFilterChange(e.target.value)}/>
       </div>
       {list.status === 'pending' && items.length === 0 ? <LoadingArea /> : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      {list.status !== 'pending' && items.length === 0 && !list.error ? (<EmptyState title={isCoordinatorOnly ? 'Нет назначенных мероприятий' : 'Мероприятий нет'} description={isCoordinatorOnly
-                ? 'Когда вас назначат координатором на мероприятие, оно появится здесь.'
-                : 'Создайте первое мероприятие или измените параметры поиска.'}/>) : null}
+      {list.status !== 'pending' && sortedEvents.length === 0 && !list.error ? (<EmptyState title={items.length === 0
+                ? (isCoordinatorOnly ? 'Нет назначенных мероприятий' : 'Мероприятий нет')
+                : 'Ничего не найдено'} description={items.length === 0
+                ? (isCoordinatorOnly
+                    ? 'Когда вас назначат координатором на мероприятие, оно появится здесь.'
+                    : 'Создайте первое мероприятие или измените параметры поиска.')
+                : 'Измените фильтр по статусу или запрос поиска.'}/>) : null}
       <div className="grid w-full gap-3">
         {sortedEvents.map((event) => (<EventCard key={event.id} event={event} userNameById={userNameById} {...(currentUser ? { viewerUserId: currentUser.id } : {})} hideCoordinators={isCoordinatorOnly} onClick={(id) => navigate(PATHS.eventDetail(id))}/>))}
       </div>

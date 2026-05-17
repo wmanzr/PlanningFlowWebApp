@@ -85,7 +85,7 @@ public class TaskRepositoryAdapter implements TaskRepositoryPort {
         final List<TaskEntity> entities = repository.findCommittedTasksForUserOnDate(
                 userId,
                 List.of(AssignStatus.PENDING, AssignStatus.ACCEPTED),
-                List.of(TaskStatus.DONE, TaskStatus.CANCELLED),
+                List.of(TaskStatus.CANCELLED),
                 date.atStartOfDay(),
                 date.plusDays(1).atStartOfDay()
         );

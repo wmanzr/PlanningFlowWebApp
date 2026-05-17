@@ -41,4 +41,32 @@ describe('parseApiError', () => {
         expect(parsed.errorCode).toBe(ERROR_CODE.FORBIDDEN);
         expect(parsed.message).toContain('Доступ запрещен');
     });
+    it('maps failed login 403 without body to invalid credentials message', () => {
+        const error = new AxiosError('Request failed with status code 403', 'ERR_BAD_REQUEST', { url: '/api/v1/auth/login', method: 'post', headers: new AxiosHeaders() }, null, {
+            status: 403,
+            statusText: 'Forbidden',
+            headers: {},
+            config: { headers: new AxiosHeaders() },
+            data: {},
+        });
+        const parsed = parseApiError(error);
+        expect(parsed.errorCode).toBe(ERROR_CODE.INVALID_CREDENTIALS);
+        expect(parsed.message).toBe('Неверный логин или пароль');
+    });
+    it('uses API message for INVALID_CREDENTIALS on login', () => {
+        const error = new AxiosError('Request failed', 'ERR_BAD_REQUEST', { url: '/api/v1/auth/login', method: 'post', headers: new AxiosHeaders() }, null, {
+            status: 401,
+            statusText: 'Unauthorized',
+            headers: {},
+            config: { headers: new AxiosHeaders() },
+            data: {
+                message: 'Неверный логин или пароль',
+                errorCode: 'INVALID_CREDENTIALS',
+                timestamp: 1700000000000,
+            },
+        });
+        const parsed = parseApiError(error);
+        expect(parsed.errorCode).toBe(ERROR_CODE.INVALID_CREDENTIALS);
+        expect(parsed.message).toBe('Неверный логин или пароль');
+    });
 });

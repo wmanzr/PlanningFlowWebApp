@@ -58,6 +58,7 @@ public class UpdateEventService implements UpdateEventUseCase {
             final LocalDateTime newStartDate,
             final LocalDateTime newEndDate,
             final GeoPoint newLocation,
+            final boolean clearLocation,
             final List<Integer> coordinatorIds
     ) {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
@@ -77,7 +78,8 @@ public class UpdateEventService implements UpdateEventUseCase {
                         || newDescription != null
                         || newStartDate != null
                         || newEndDate != null
-                        || newLocation != null;
+                        || newLocation != null
+                        || clearLocation;
         final boolean editsCoordinators = coordinatorIds != null;
         if (editsDetails) {
             PlanningAccessPolicy.assertCanEditEvent(actor, event);
@@ -102,7 +104,9 @@ public class UpdateEventService implements UpdateEventUseCase {
             event.updateDates(start, end, tasks);
         }
 
-        if (newLocation != null) {
+        if (clearLocation) {
+            event.clearLocation();
+        } else if (newLocation != null) {
             event.updateLocation(newLocation);
         }
 

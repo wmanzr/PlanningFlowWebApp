@@ -68,8 +68,8 @@ class HardConstraintsCandidateFilterTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final EventMode mode = DomainFixtures.eventMode(
                 MatchingMode.STANDARD,
                 MatchingDistance.BUILDING_SCALE,
@@ -97,8 +97,8 @@ class HardConstraintsCandidateFilterTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final MatchingContext context = DomainFixtures.matchingContext(
                 T0.minusHours(1),
                 DomainFixtures.defaultEventMode(),
@@ -131,6 +131,34 @@ class HardConstraintsCandidateFilterTest {
     }
 
     @Test
+    void rejects_when_completed_work_today_plus_new_task_exceeds_daily_cap() {
+        final User creator = DomainFixtures.user(1);
+        final var event = DomainFixtures.event(1, creator);
+        final Task task = DomainFixtures.openTask(10, event, creator, T0, T1);
+        final User candidate = DomainFixtures.user(20);
+        final CandidateSnapshot snapshot = new CandidateSnapshot(
+                null,
+                List.of(),
+                null,
+                null,
+                Duration.ZERO,
+                Duration.ofHours(7),
+                Map.of(),
+                Map.of(),
+                Map.of());
+        final MatchingContext context = DomainFixtures.matchingContext(
+                T0.minusHours(1),
+                DomainFixtures.defaultEventMode(),
+                Map.of(20, snapshot)
+        );
+
+        final RejectedCandidate rejected = filter.rejectOrNull(task, candidate, context);
+
+        assertThat(rejected).isNotNull();
+        assertThat(rejected.reason()).isEqualTo(RejectionReason.DAILY_LOAD_EXCEEDED);
+    }
+
+    @Test
     void rejects_when_daily_load_would_be_exceeded() {
         final User creator = DomainFixtures.user(1);
         final var event = DomainFixtures.event(1, creator);
@@ -144,8 +172,8 @@ class HardConstraintsCandidateFilterTest {
                 Duration.ZERO,
                 Duration.ofHours(7).plusMinutes(45),
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final MatchingContext context = DomainFixtures.matchingContext(
                 T0.minusHours(1),
                 DomainFixtures.defaultEventMode(),
@@ -189,8 +217,8 @@ class HardConstraintsCandidateFilterTest {
                 Duration.ZERO,
                 null,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final MatchingContext context = DomainFixtures.matchingContext(
                 T0.minusHours(1),
                 DomainFixtures.defaultEventMode(),

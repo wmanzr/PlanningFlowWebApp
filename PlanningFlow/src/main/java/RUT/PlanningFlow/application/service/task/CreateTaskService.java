@@ -78,12 +78,6 @@ public class CreateTaskService implements CreateTaskUseCase {
                 effectiveEnd = maxEndByPolicy;
             }
         }
-        if (effectiveStart.isBefore(event.getStartDate()) || effectiveEnd.isAfter(event.getEndDate())) {
-            throw new DomainException("Время задачи выходит за временные рамки мероприятия", "TASK_OUT_OF_EVENT_RANGE");
-        }
-
-        Task.assertScheduleDurationAllowed(effectiveStart, effectiveEnd);
-
         final List<Skill> skills = resolveRequiredSkills(requiredSkillIds);
 
         final String trimmedTitle = title == null ? "" : title.trim();

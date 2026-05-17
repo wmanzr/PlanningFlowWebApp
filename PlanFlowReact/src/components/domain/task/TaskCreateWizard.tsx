@@ -7,10 +7,23 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Badge, Button, Input, MapView, Select, coerceApiDateTimeToIso, fromDateAndTimeInputs, toDateInput, toNaiveLocalIsoFromTimestamp, toTimeInputRoundedToStep, type MapMarker, } from '@/components/ui';
+import {
+    Button,
+    Input,
+    MapView,
+    MAP_ZOOM_OVERVIEW,
+    Select,
+    geoPointFromLatLng,
+    resolveMapViewportCenter,
+    coerceApiDateTimeToIso,
+    fromDateAndTimeInputs,
+    toDateInput,
+    toNaiveLocalIsoFromTimestamp,
+    toTimeInputRoundedToStep,
+    type MapMarker,
+} from '@/components/ui';
 import { formatDateTime } from '@/components/ui/formatters';
-import { surnameWithInitials } from '@/components/domain/event/EventCard';
-import { ExecutorMatchingCard, MATCHING_REJECTION_LABELS, } from '@/components/domain/matching';
+import { ExecutorMatchingPicker, useAutoSelectRankedExecutors } from '@/components/domain/matching';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { toastsActions } from '@/store/slices/toasts/toastsSlice';
 import { matchingActions, runMatchingThunk, } from '@/store/slices/matching/matchingSlice';
@@ -22,14 +35,10 @@ import { selectEventById } from '@/store/slices/events/selectors';
 import { assignTaskThunk, createTaskThunk, fetchTaskByIdThunk, fetchTasksForEventThunk, updateTaskThunk, } from '@/store/slices/tasks/tasksSlice';
 import { makeSelectTasksByEvent, selectTaskById } from '@/store/slices/tasks/selectors';
 import { fetchUsersThunk } from '@/store/slices/users/usersSlice';
-import { asIsoDateTime, asSkillId, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, MatchingMode, UserRole, type AppApiError, type EventId, type EventResponseDto, type RejectedCandidateResponseDto, type SkillId, type SkillResponseDto, type TaskId, type TaskResponseDto, type UserId, type UserResponseDto, } from '@/types';
+import { asIsoDateTime, asSkillId, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, MatchingMode, UserRole, type AppApiError, type EventId, type EventResponseDto, type SkillResponseDto, type TaskId, type TaskResponseDto, type UserId, type UserResponseDto, } from '@/types';
+import { isEligibleParentTask } from '@/utils/isEligibleParentTask';
 import { validationErrorsToToastMessage } from '@/utils/validationErrorsToToastMessage';
 import { PATHS } from '@/pages/paths';
-function formatRejectionTooltip(r: RejectedCandidateResponseDto): string {
-    const label = MATCHING_REJECTION_LABELS[r.reason];
-    const d = r.details?.trim();
-    return d ? `${label}: ${d}` : label;
-}
 const TITLE_MAX = 200;
 const MIN_PEOPLE = 1;
 const MAX_PEOPLE = 1000;
@@ -37,6 +46,8 @@ const MAX_TASK_DURATION_MS = 8 * 60 * 60 * 1000;
 const MATCH_MAX_DAILY_LOAD_MINUTES = 480;
 const MATCH_MIN_TECHNICAL_GAP_MINUTES = 15;
 const TIME_STEP_MINUTES = 30;
+const PARENT_TASK_NONE_MESSAGE =
+    'Все задачи на мероприятии завершаются позже начала текущей задачи';
 const TASK_MATCHING_RADIUS_OPTIONS: {
     value: number;
     label: string;
@@ -188,93 +199,25 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
     const [executors, setExecutors] = useState<UserResponseDto[]>([]);
     const [scheduleRangeMessage, setScheduleRangeMessage] = useState<string | null>(null);
     const schedulePrimedRef = useRef(false);
+    const eventMapPrimedRef = useRef(false);
+    const [mapViewResetKey, setMapViewResetKey] = useState(0);
     const [selectedExecutorIds, setSelectedExecutorIds] = useState(() => new Set<number>());
     const [bulkAssigning, setBulkAssigning] = useState(false);
     const createdTaskEntity = useAppSelector(selectTaskById(createdTaskId ?? undefined));
-    const metricsByUserId = useMemo(() => {
-        const m = new Map<number, {
-            distanceMeters?: number;
-            workedTodayMinutes: number;
-            maxDailyLoadMinutes: number;
-            matchedRequiredSkillIds: SkillId[];
-        }>();
-        if (!matchResult)
-            return m;
-        for (const r of matchResult.ranked) {
-            m.set(Number(r.candidateId), {
-                workedTodayMinutes: r.workedTodayMinutes,
-                maxDailyLoadMinutes: r.maxDailyLoadMinutes,
-                matchedRequiredSkillIds: r.matchedRequiredSkillIds,
-                ...(r.distanceMeters !== undefined ? { distanceMeters: r.distanceMeters } : {}),
-            });
+    const taskPickerOptions = useMemo(() => {
+        if (!createdTaskEntity) {
+            return eventTasks.filter((t) => createdTaskId === null || t.id !== createdTaskId);
         }
-        for (const r of matchResult.rejected) {
-            const id = Number(r.candidateId);
-            if (m.has(id))
-                continue;
-            m.set(id, {
-                workedTodayMinutes: r.workedTodayMinutes,
-                maxDailyLoadMinutes: r.maxDailyLoadMinutes,
-                matchedRequiredSkillIds: r.matchedRequiredSkillIds,
-                ...(r.distanceMeters !== undefined ? { distanceMeters: r.distanceMeters } : {}),
-            });
-        }
-        return m;
-    }, [matchResult]);
-    const rankedCandidateIds = useMemo(() => new Set(matchResult?.ranked.map((r) => Number(r.candidateId)) ?? []), [matchResult?.ranked]);
-    const rejectedByCandidateId = useMemo(() => {
-        const m = new Map<number, RejectedCandidateResponseDto>();
-        for (const r of matchResult?.rejected ?? []) {
-            m.set(Number(r.candidateId), r);
-        }
-        return m;
-    }, [matchResult]);
-    useEffect(() => {
-        if (!matchResult)
-            return;
-        const rejectedIds = new Set(matchResult.rejected.map((r) => Number(r.candidateId)));
-        if (rejectedIds.size === 0)
-            return;
-        setSelectedExecutorIds((prev) => {
-            let changed = false;
-            const next = new Set(prev);
-            for (const id of rejectedIds) {
-                if (next.delete(id))
-                    changed = true;
-            }
-            return changed ? next : prev;
-        });
-    }, [matchResult]);
-    const leftExecutors = useMemo(() => {
-        const q = executorSearch.trim().toLowerCase();
-        const rejectedIds = new Set((matchResult?.rejected ?? []).map((r) => Number(r.candidateId)));
-        const filtered = executors
-            .filter((u) => !rankedCandidateIds.has(Number(u.id)))
-            .filter((u) => {
-            if (!q)
-                return true;
-            return `${u.fullName} ${u.username}`.toLowerCase().includes(q);
-        });
-        return [...filtered].sort((a, b) => {
-            const ar = rejectedIds.has(Number(a.id)) ? 0 : 1;
-            const br = rejectedIds.has(Number(b.id)) ? 0 : 1;
-            if (ar !== br)
-                return ar - br;
-            return (a.fullName ?? '').localeCompare(b.fullName ?? '', 'ru');
-        });
-    }, [executors, executorSearch, rankedCandidateIds, matchResult?.rejected]);
-    const rejectedNotInUserDirectory = useMemo(() => {
-        const ids = new Set(executors.map((u) => Number(u.id)));
-        return (matchResult?.rejected ?? []).filter((r) => !ids.has(Number(r.candidateId)));
-    }, [matchResult?.rejected, executors]);
-    const taskPickerOptions = useMemo(() => eventTasks.filter((t) => createdTaskId === null || t.id !== createdTaskId), [eventTasks, createdTaskId]);
+        return eventTasks.filter((t) => isEligibleParentTask(t, createdTaskEntity));
+    }, [eventTasks, createdTaskId, createdTaskEntity]);
     const parentTaskValue = useMemo(() => {
         const dep = createdTaskEntity?.dependencyIds?.[0];
         if (dep === undefined)
             return null;
         return taskPickerOptions.find((t) => t.id === dep) ?? null;
     }, [createdTaskEntity?.dependencyIds, taskPickerOptions]);
-    const { register, handleSubmit, reset, setValue, control, formState: { errors }, } = useForm<WizardInput, unknown, WizardOutput>({
+    const hasParentTaskOptions = taskPickerOptions.length > 0;
+    const { register, handleSubmit, reset, setValue, trigger, control, formState: { errors }, } = useForm<WizardInput, unknown, WizardOutput>({
         mode: 'onSubmit',
         reValidateMode: 'onChange',
         resolver: zodResolver(wizardSchema),
@@ -333,15 +276,55 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
         return skills.filter((s) => ids.has(Number(s.id)));
     }, [skills, selectedSkillIds]);
     const mapMarkers = useMemo<MapMarker[]>(() => {
+        const markers: MapMarker[] = [];
+        if (
+            eventEntity?.latitude !== undefined &&
+            eventEntity.longitude !== undefined &&
+            Number.isFinite(eventEntity.latitude) &&
+            Number.isFinite(eventEntity.longitude)
+        ) {
+            markers.push({
+                id: 'event-ref',
+                lat: eventEntity.latitude,
+                lng: eventEntity.longitude,
+                kind: 'event',
+                label: eventEntity.title,
+                emphasis: 'default',
+            });
+        }
         const lat = Number(watchedLatitude);
         const lng = Number(watchedLongitude);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng))
-            return [];
-        return [{ id: 'task-pos', lat, lng, kind: 'task', label: 'Задача' }];
-    }, [watchedLatitude, watchedLongitude]);
-    const mapCenter = mapMarkers.length > 0 && mapMarkers[0]
-        ? { latitude: mapMarkers[0].lat, longitude: mapMarkers[0].lng }
-        : undefined;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            markers.push({
+                id: 'task-pos',
+                lat,
+                lng,
+                kind: 'task',
+                label: 'Задача',
+                emphasis: 'primary',
+            });
+        }
+        return markers;
+    }, [watchedLatitude, watchedLongitude, eventEntity?.latitude, eventEntity?.longitude, eventEntity?.title]);
+    const mapViewportCenter = useMemo(
+        () => resolveMapViewportCenter(geoPointFromLatLng(eventEntity?.latitude, eventEntity?.longitude)),
+        [eventEntity?.latitude, eventEntity?.longitude],
+    );
+
+    const clearMapLocation = () => {
+        setValue('latitude', '', { shouldDirty: true });
+        setValue('longitude', '', { shouldDirty: true });
+        setMapViewResetKey((key) => key + 1);
+        void trigger(['latitude', 'longitude']);
+    };
+
+    useEffect(() => {
+        if (!open || !eventEntity || eventMapPrimedRef.current) {
+            return;
+        }
+        eventMapPrimedRef.current = true;
+        setMapViewResetKey((key) => key + 1);
+    }, [open, eventEntity]);
     useEffect(() => {
         if (!open)
             return;
@@ -360,6 +343,8 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
         setExecutors([]);
         setSelectedExecutorIds(new Set());
         schedulePrimedRef.current = false;
+        eventMapPrimedRef.current = false;
+        setMapViewResetKey(0);
         setScheduleRangeMessage(null);
         dispatch(matchingActions.clear());
         reset({
@@ -482,12 +467,32 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
             }));
         }
     }, [createdTaskId, dispatch]);
+    useEffect(() => {
+        if (step !== 1 || !createdTaskId || !createdTaskEntity) {
+            return;
+        }
+        const dep = createdTaskEntity.dependencyIds?.[0];
+        if (dep === undefined) {
+            return;
+        }
+        if (taskPickerOptions.some((t) => t.id === dep)) {
+            return;
+        }
+        void handleParentTaskChange(null);
+    }, [
+        step,
+        createdTaskId,
+        createdTaskEntity,
+        taskPickerOptions,
+        handleParentTaskChange,
+    ]);
     const requiredSlots = useMemo(() => {
         const n = Number(watchedRequiredCount);
         if (!Number.isFinite(n) || n < MIN_PEOPLE)
             return MIN_PEOPLE;
         return Math.min(MAX_PEOPLE, Math.floor(n));
     }, [watchedRequiredCount]);
+    useAutoSelectRankedExecutors(matchResult, requiredSlots, setSelectedExecutorIds, open && step === 1);
     const toggleExecutorSelection = useCallback((userId: UserId) => {
         setSelectedExecutorIds((prev) => {
             const next = new Set(prev);
@@ -647,18 +652,18 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
                   </fieldset>)}/>
               {errors.geoReferenceRadiusMeters?.message ? (<p className="mt-2 text-sm text-danger">{errors.geoReferenceRadiusMeters.message}</p>) : null}
             </div>
-            <div className="flex gap-2.5 rounded-xl border border-neutral-200/90 bg-white p-3 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-              <InfoOutlinedIcon className="mt-0.5 shrink-0 text-neutral-400 dark:text-neutral-500" fontSize="small" aria-hidden/>
+            <div className="flex gap-2.5 rounded-xl border border-secondary/40 bg-surface-muted p-3 shadow-sm">
+              <InfoOutlinedIcon className="mt-0.5 shrink-0 text-secondary" fontSize="small" aria-hidden/>
               <div className="min-w-0 flex-1 space-y-2">
-                <Typography variant="caption" color="text.secondary" className="block font-medium uppercase tracking-wide">
+                <p className="text-xs font-medium uppercase tracking-wide text-paragraph">
                   Нормативы
-                </Typography>
-                <Typography variant="body2" color="text.secondary" className="text-sm leading-snug">
-                  Суточный лимит труда по РФ — <strong className="font-medium text-foreground">8 ч</strong>.
-                </Typography>
-                <Typography variant="body2" color="text.secondary" className="text-sm leading-snug">
-                  Обязательный перерыв между задачами составляет — <strong className="font-medium text-foreground">15 мин</strong>.
-                </Typography>
+                </p>
+                <p className="text-sm leading-snug text-paragraph">
+                  Суточный лимит труда по РФ — <strong className="font-medium text-headline">8 ч</strong>.
+                </p>
+                <p className="text-sm leading-snug text-paragraph">
+                  Обязательный перерыв между задачами составляет — <strong className="font-medium text-headline">15 мин</strong>.
+                </p>
               </div>
             </div>
           </div>
@@ -670,17 +675,24 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
                   Нажмите на карту, чтобы указать место задачи.
                 </Typography>
               </div>
-              {mapMarkers.length > 0 ? (<Button type="button" size="sm" variant="ghost" onClick={() => {
-                    setValue('latitude', '', { shouldValidate: true });
-                    setValue('longitude', '', { shouldValidate: true });
-                }}>
+              {mapMarkers.length > 0 ? (
+                <Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
                   Очистить
-                </Button>) : null}
+                </Button>
+              ) : null}
             </div>
-            <MapView height="220px" {...(mapCenter ? { center: mapCenter } : {})} markers={mapMarkers} onMapClick={(point) => {
-                setValue('latitude', String(point.latitude), { shouldValidate: true });
-                setValue('longitude', String(point.longitude), { shouldValidate: true });
-            }}/>
+            <MapView
+                height="220px"
+                center={mapViewportCenter}
+                zoom={MAP_ZOOM_OVERVIEW}
+                viewResetKey={mapViewResetKey}
+                markers={mapMarkers}
+                onMapClick={(point) => {
+                    setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
+                    setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
+                    void trigger(['latitude', 'longitude']);
+                }}
+            />
             {errors.latitude?.message ? (<p className="mt-2 text-sm text-danger">{errors.latitude.message}</p>) : null}
           </div>
           <div className="flex justify-between gap-2">
@@ -691,102 +703,64 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
               Далее
             </Button>
           </div>
-        </form>) : (<div className="flex flex-col gap-4">
-          {matchStatus === 'pending' ? (<Typography variant="body2" color="text.secondary">
-              Выполняется подбор кандидатов…
-            </Typography>) : null}
-          {matchError ? (<Typography variant="body2" color="error">
-              {matchError.message}
-            </Typography>) : null}
-
-          {taskPickerOptions.length > 0 ? (<div className="flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
-              <Autocomplete disablePortal options={taskPickerOptions} value={parentTaskValue} onChange={(_, task) => void handleParentTaskChange(task)} getOptionLabel={(t) => formatTaskPickerLabel(t)} filterOptions={filterTaskOptions} isOptionEqualToValue={(a, b) => a.id === b.id} renderOption={(props, option) => (<li {...props} key={option.id}>
+        </form>) : (<div className="flex min-h-[min(640px,78vh)] flex-col gap-4">
+          <div className="flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
+              <Autocomplete
+                disablePortal
+                disabled={!hasParentTaskOptions}
+                forcePopupIcon={hasParentTaskOptions}
+                {...(!hasParentTaskOptions
+                  ? {
+                      inputValue: PARENT_TASK_NONE_MESSAGE,
+                      onInputChange: () => undefined,
+                  }
+                  : {})}
+                options={taskPickerOptions}
+                value={parentTaskValue}
+                onChange={(_, task) => void handleParentTaskChange(task)}
+                getOptionLabel={(t) => formatTaskPickerLabel(t)}
+                filterOptions={filterTaskOptions}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                renderOption={(props, option) => (<li {...props} key={option.id}>
                     <div className="flex flex-col py-0.5">
                       <span>{option.title}</span>
                       <Typography variant="caption" color="text.secondary">
                         {formatDateTime(option.startTime)} — {formatDateTime(option.endTime)}
                       </Typography>
                     </div>
-                  </li>)} renderInput={(params) => (<TextField {...params} label="Первоочередная задача" placeholder="Поиск по названию или датам…" size="small"/>)}/>
-              <Typography variant="caption" color="text.secondary">
-                Необязательно: задача мероприятия, которая должна завершиться раньше этой.
-              </Typography>
-            </div>) : null}
+                  </li>)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Первоочередная задача"
+                    placeholder={
+                      hasParentTaskOptions
+                        ? 'Поиск по названию или датам…'
+                        : PARENT_TASK_NONE_MESSAGE
+                    }
+                    size="small"
+                  />
+                )}
+              />
+              {hasParentTaskOptions ? (
+                <Typography variant="caption" color="text.secondary">
+                  Необязательно: показаны только задачи, которые завершатся до начала этой.
+                </Typography>
+              ) : null}
+            </div>
 
-          {matchResult ? (<>
-              <div className="rounded-lg border border-secondary/45 bg-surface-muted/70 px-3 py-2.5">
-                <Typography variant="body2" className="font-semibold text-foreground">
-                  Выделено: {selectedExecutorIds.size} из {requiredSlots}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" className="mt-0.5 block">
-                  Нажмите на карточку, чтобы выбрать исполнителя. Отклоненные алгоритмом подсвечены серым и недоступны — при наведении показывается причина.
-                </Typography>
-              </div>
-              <div className="grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
-                <div className="flex min-h-0 min-w-0 flex-col gap-3">
-                  <Typography variant="subtitle2">Все исполнители</Typography>
-                  <TextField size="small" label="Поиск по ФИО" value={executorSearch} onChange={(e) => setExecutorSearch(e.target.value)} placeholder="Имя или фамилия"/>
-                  <div className="flex max-h-[min(420px,55vh)] flex-col gap-2 overflow-y-auto pr-1">
-                    {leftExecutors.length === 0 && rejectedNotInUserDirectory.length === 0 ? (<Typography variant="body2" color="text.secondary">
-                        Нет исполнителей для отображения (или ничего не найдено по запросу).
-                      </Typography>) : (<>
-                      {leftExecutors.map((u) => {
-                    const metrics = metricsByUserId.get(Number(u.id));
-                    const algorithmMiss = metrics === undefined;
-                    const uid = Number(u.id);
-                    const rej = rejectedByCandidateId.get(uid);
-                    const blockedTip = rej !== undefined ? formatRejectionTooltip(rej) : undefined;
-                    const sel = !blockedTip && selectedExecutorIds.has(uid);
-                    const addLocked = !blockedTip && !sel && selectedExecutorIds.size >= requiredSlots;
-                    return (<ExecutorMatchingCard key={u.id} fullName={surnameWithInitials(u.fullName)} username={u.username} matchedSkillIds={metrics?.matchedRequiredSkillIds ?? []} {...(metrics && !algorithmMiss
-                        ? {
-                            workedTodayMinutes: metrics.workedTodayMinutes,
-                            maxDailyLoadMinutes: metrics.maxDailyLoadMinutes,
-                            ...(metrics.distanceMeters !== undefined
-                                ? { distanceMeters: metrics.distanceMeters }
-                                : {}),
-                        }
-                        : {})} algorithmMiss={algorithmMiss && !blockedTip} {...(blockedTip !== undefined
-                        ? { blockedSelectionTooltip: blockedTip, selectable: false }
-                        : {
-                            selectable: true,
-                            selected: sel,
-                            selectionAddDisabled: addLocked,
-                            onToggleSelect: () => {
-                                if (addLocked)
-                                    return;
-                                toggleExecutorSelection(u.id);
-                            },
-                        })}/>);
-                })}
-                      {rejectedNotInUserDirectory.map((r) => (<ExecutorMatchingCard key={`rej-dir-${r.candidateId}`} fullName={surnameWithInitials(r.candidateFullName)} username={r.candidateUsername} matchedSkillIds={r.matchedRequiredSkillIds} workedTodayMinutes={r.workedTodayMinutes} maxDailyLoadMinutes={r.maxDailyLoadMinutes} {...(r.distanceMeters !== undefined
-                        ? { distanceMeters: r.distanceMeters }
-                        : {})} blockedSelectionTooltip={formatRejectionTooltip(r)} selectable={false}/>))}
-                    </>)}
-                  </div>
-                </div>
-                <div className="flex min-w-0 flex-col gap-3">
-                  <Typography variant="subtitle2">Рекомендованные кандидаты</Typography>
-                  <div className="flex max-h-[min(420px,55vh)] flex-col gap-2 overflow-y-auto pr-1">
-                    {matchResult.ranked.length === 0 ? (<Typography variant="body2" color="text.secondary">
-                        Алгоритм не предложил кандидатов в этом режиме подбора.
-                      </Typography>) : (matchResult.ranked.map((c) => {
-                    const uid = Number(c.candidateId);
-                    const sel = selectedExecutorIds.has(uid);
-                    const addLocked = !sel && selectedExecutorIds.size >= requiredSlots;
-                    return (<ExecutorMatchingCard key={c.candidateId} fullName={surnameWithInitials(c.candidateFullName)} username={c.candidateUsername} matchedSkillIds={c.matchedRequiredSkillIds} workedTodayMinutes={c.workedTodayMinutes} maxDailyLoadMinutes={c.maxDailyLoadMinutes} {...(c.distanceMeters !== undefined
-                        ? { distanceMeters: c.distanceMeters }
-                        : {})} rankBadge={<Badge tone="success">#{c.rank}</Badge>} selectable selected={sel} selectionAddDisabled={addLocked} onToggleSelect={() => {
-                            if (addLocked)
-                                return;
-                            toggleExecutorSelection(c.candidateId);
-                        }}/>);
-                }))}
-                  </div>
-                </div>
-              </div>
-            </>) : null}
-          <div className="flex flex-wrap justify-between gap-2">
+          <ExecutorMatchingPicker
+            matchResult={matchResult}
+            matchStatus={matchStatus}
+            matchError={matchError}
+            requiredSlots={requiredSlots}
+            executors={executors}
+            executorSearch={executorSearch}
+            onExecutorSearchChange={setExecutorSearch}
+            selectedExecutorIds={selectedExecutorIds}
+            onToggleExecutor={toggleExecutorSelection}
+          />
+          <div className="mt-auto flex flex-wrap justify-between gap-2">
             <Button type="button" variant="ghost" onClick={() => {
                 setStep(0);
             }}>

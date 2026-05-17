@@ -21,7 +21,7 @@ public class ExternalSupplySimulator {
     private static final double NO_CAPACITY_FAILURE_RATE = 0.07;
     private static final double SLOW_RESPONSE_PROBABILITY = 0.12;
     
-    private static final int SLOW_RESPONSE_DELAY_MS = 7_000;
+    private static final int SLOW_RESPONSE_DELAY_MS = 3_000;
 
     public static final String HOOK_NO_CAPACITY = "__SIM_NO_CAPACITY__";
     public static final String HOOK_UNAVAILABLE = "__SIM_503__";

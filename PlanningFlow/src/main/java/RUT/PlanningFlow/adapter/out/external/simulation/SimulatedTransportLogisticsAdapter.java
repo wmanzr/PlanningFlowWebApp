@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SimulatedTransportLogisticsAdapter implements TransportLogisticsPort {
-
     private final ExternalSupplySimulator simulator;
 
     public SimulatedTransportLogisticsAdapter(final ExternalSupplySimulator simulator) {

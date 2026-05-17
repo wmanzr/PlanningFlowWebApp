@@ -226,6 +226,7 @@ public class EventController {
                 request.getStartDate(),
                 request.getEndDate(),
                 newLocation,
+                Boolean.TRUE.equals(request.getClearLocation()),
                 request.getCoordinatorIds()
         );
 

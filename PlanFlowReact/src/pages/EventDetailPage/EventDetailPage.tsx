@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -16,9 +16,9 @@ import { makeSelectTasksByEvent, selectTasksListMeta } from '@/store/slices/task
 import { selectCurrentUser, selectHasRole } from '@/store/slices/auth/selectors';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import Typography from '@mui/material/Typography';
-import { Button, Card, CardHeader, EmptyState, ErrorMessage, Input, LoadingArea, MapView, Modal, PageLayout, Textarea, formatDateTime, type MapMarker, } from '@/components/ui';
+import { Button, Card, CardHeader, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, SUMMARY_PREVIEW_PANEL_BODY, SUMMARY_PREVIEW_PANEL_HEADER, Textarea, formatDateTime, geoPointFromLatLng, slicePreviewList, type MapMarker, } from '@/components/ui';
 import { SelfOrProfileLink } from '@/components/domain/user/SelfOrProfileLink';
-import { EventDashboardWidget, EventForm, EventStatusBadge, EventAiRecommendationsPanel } from '@/components/domain/event';
+import { EventDashboardWidget, EventForm, EventStatusBadge, EventAiRecommendationsPanel, EventMapPanel } from '@/components/domain/event';
 import { IncidentCard, IncidentForm } from '@/components/domain/incident';
 import { TaskCard, TaskCreateWizard } from '@/components/domain/task';
 import { EventStatus, asEventId, asTaskId, asUserId, UserRole, type EventCreateRequest, type EventUpdateRequest, type AppApiError, type IncidentCreateRequest, type UserResponseDto, } from '@/types';
@@ -37,8 +37,6 @@ const cancelSchema = z.object({
         .max(REASON_MAX_LENGTH),
 });
 type CancelValues = z.infer<typeof cancelSchema>;
-const PANEL_HEADER_ROW = 'flex flex-wrap items-center justify-between gap-3 border-b border-secondary/60 px-5 py-4';
-const SUMMARY_PANEL_BODY = 'flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden p-5';
 const PREVIEW_ROW = 'flex min-w-0 shrink-0 flex-col';
 function formatInitials(fullName: string | undefined): string {
     if (!fullName)
@@ -271,11 +269,12 @@ export const EventDetailPage = () => {
         });
         return result;
     }, [event, tasks]);
-    const mapCenter = event?.latitude !== undefined && event?.longitude !== undefined
-        ? { latitude: event.latitude, longitude: event.longitude }
-        : undefined;
-    const tasksPreviewList = useMemo(() => [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime)).slice(0, 3), [tasks]);
-    const incidentsPreviewList = useMemo(() => incidents.slice(0, 3), [incidents]);
+    const mapCenter = geoPointFromLatLng(event?.latitude, event?.longitude);
+    const tasksPreview = useMemo(() => {
+        const sorted = [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        return slicePreviewList(sorted);
+    }, [tasks]);
+    const incidentsPreview = useMemo(() => slicePreviewList(incidents), [incidents]);
     if (eventId === undefined) {
         return (<PageLayout title="Мероприятие">
         <ErrorMessage message="Некорректный идентификатор мероприятия"/>
@@ -384,8 +383,8 @@ export const EventDetailPage = () => {
         user.roles.includes(UserRole.COORDINATOR) &&
         !user.roles.includes(UserRole.ORGANIZER) &&
         !user.roles.includes(UserRole.ADMIN);
-    const tasksMoreCount = Math.max(0, tasks.length - tasksPreviewList.length);
-    const incidentsMoreCount = Math.max(0, incidents.length - incidentsPreviewList.length);
+    const tasksMoreCount = tasksPreview.moreCount;
+    const incidentsMoreCount = incidentsPreview.moreCount;
     return (<PageLayout containerMaxWidth={false}>
       {action.error && !isEditOpen ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(eventsActions.clearActionError())}/>) : null}
       {incidentsAction.error ? (<ErrorMessage message={incidentsAction.error.message} onShown={() => dispatch(incidentsActions.clearActionError())}/>) : null}
@@ -454,31 +453,17 @@ export const EventDetailPage = () => {
           {dashboard.data ? (<EventDashboardWidget data={dashboard.data} variant="embedded"/>) : null}
         </section>) : null}
 
-      <section className="w-full max-w-full overflow-hidden rounded-lg border border-secondary/50 bg-surface-muted/80">
-        <div className="flex flex-col gap-1 px-1 py-2 sm:px-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-1">
-            <Typography variant="caption" color="text.secondary">
-              Карта мероприятия и задач с координатами
-            </Typography>
-            <Link to={PATHS.eventMap(event.id)} className="text-xs font-medium text-primary underline">
-              Расширенная карта и фильтр
-            </Link>
-          </div>
-          <div className="w-full max-w-full overflow-hidden">
-            <MapView height="140px" zoom={11} {...(mapCenter ? { center: mapCenter } : {})} markers={mapMarkers}/>
-          </div>
-        </div>
-      </section>
+            <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})} />
 
       {hasCoordinator ? (<div className="flex w-full min-w-0 flex-col gap-6">
-          <div className="grid w-full min-w-0 gap-6 lg:grid-cols-2 lg:items-stretch">
-          <Card padded={false} className="flex h-full min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
+          <div className="grid w-full min-w-0 gap-6 lg:grid-cols-2 lg:items-start">
+          <Card padded={false} className="flex w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventTasks(event.id));
                 }
             }}>
-            <div className={PANEL_HEADER_ROW}>
+            <div className={SUMMARY_PREVIEW_PANEL_HEADER}>
               <div>
                 <h2 className="text-lg font-semibold text-headline">Задачи</h2>
                 <p className="text-sm text-paragraph">
@@ -493,12 +478,12 @@ export const EventDetailPage = () => {
                   Добавить задачу
                 </Button>) : null}
             </div>
-            <div className={SUMMARY_PANEL_BODY}>
+            <div className={SUMMARY_PREVIEW_PANEL_BODY}>
               {!canViewTasksPanel ? (<EmptyState title="Нет доступа к задачам" description="Задачи доступны организатору, администратору, создателю и координаторам мероприятия."/>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title="Задач нет" description={canPlanTasks
                     ? 'Создайте первую задачу мероприятия.'
                     : 'Задачи по этому мероприятию отображаются в режиме просмотра.'}/>) : null}
               {canViewTasksPanel ? (<div className="flex flex-col gap-2">
-                  {tasksPreviewList.map((task) => (<div key={task.id} className={PREVIEW_ROW} onClick={(e) => {
+                  {tasksPreview.preview.map((task) => (<div key={task.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();
                         navigate(PATHS.taskDetail(event.id, task.id));
                     }} onKeyDown={(e) => {
@@ -519,13 +504,13 @@ export const EventDetailPage = () => {
             </div>
           </Card>
 
-          <Card padded={false} className="flex h-full min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
+          <Card padded={false} className="flex w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventIncidents(event.id));
                 }
             }}>
-            <div className={PANEL_HEADER_ROW}>
+            <div className={SUMMARY_PREVIEW_PANEL_HEADER}>
               <div>
                 <h2 className="text-lg font-semibold text-headline">Инциденты</h2>
                 <p className="text-sm text-paragraph">
@@ -541,10 +526,10 @@ export const EventDetailPage = () => {
                   Создать инцидент
                 </Button>) : null}
             </div>
-            <div className={SUMMARY_PANEL_BODY}>
+            <div className={SUMMARY_PREVIEW_PANEL_BODY}>
               {incidents.length === 0 && incidentsList.status !== 'pending' ? (<EmptyState title="Инцидентов нет" description="На этом мероприятии пока не зафиксировано инцидентов."/>) : null}
-              {incidents.length > 0 ? (<div className="flex min-h-0 flex-1 flex-col gap-2">
-                  {incidentsPreviewList.map((incident) => (<div key={incident.id} className={PREVIEW_ROW} onClick={(e) => {
+              {incidents.length > 0 ? (<div className="flex flex-col gap-2">
+                  {incidentsPreview.preview.map((incident) => (<div key={incident.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();
                         navigate(PATHS.incidentDetail(incident.id));
                     }} onKeyDown={(e) => {

@@ -13,16 +13,28 @@ export interface ModalProps {
     description?: ReactNode;
     footer?: ReactNode;
     children?: ReactNode;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'ml' | 'lg';
     closeOnBackdrop?: boolean;
 }
-const sizeMap: Record<NonNullable<ModalProps['size']>, 'xs' | 'sm' | 'md'> = {
+const sizeMap: Record<NonNullable<ModalProps['size']>, 'xs' | 'sm' | 'md' | false> = {
     sm: 'xs',
     md: 'sm',
+    ml: false,
     lg: 'md',
 };
+const PAPER_MAX_WIDTH_PX: Partial<Record<NonNullable<ModalProps['size']>, number>> = {
+    ml: 720,
+};
 export const Modal = ({ open, onClose, title, description, footer, children, size = 'md', closeOnBackdrop = true, }: ModalProps) => {
-    return (<Dialog open={open} onClose={closeOnBackdrop ? onClose : undefined} maxWidth={sizeMap[size]} fullWidth scroll="paper" slotProps={{
+    const paperMaxWidth = PAPER_MAX_WIDTH_PX[size];
+    return (<Dialog open={open} onClose={closeOnBackdrop ? onClose : undefined} maxWidth={sizeMap[size]} fullWidth scroll="paper" sx={paperMaxWidth !== undefined
+            ? {
+                '& .MuiDialog-paper': {
+                    maxWidth: paperMaxWidth,
+                    width: 'calc(100% - 32px)',
+                },
+            }
+            : undefined} slotProps={{
             backdrop: {
                 sx: { backdropFilter: 'blur(2px)' },
             },

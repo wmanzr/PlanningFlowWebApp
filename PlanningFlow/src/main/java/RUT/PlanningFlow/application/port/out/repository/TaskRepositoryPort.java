@@ -23,6 +23,7 @@ public interface TaskRepositoryPort {
             String titleOrNull,
             PageQuery pageQuery
     );
+
     PageResult<Task> findTasksForUserBetween(
             Integer userId,
             List<AssignStatus> assignmentStatuses,
@@ -34,20 +35,14 @@ public interface TaskRepositoryPort {
     List<Task> findTasksForEvent(Integer eventId);
     PageResult<Task> findTasksForEvent(Integer eventId, PageQuery pageQuery);
 
-    
     boolean existsByEventIdAndTitleIgnoreCase(Integer eventId, String title);
-
-    
     boolean existsByEventIdAndTitleIgnoreCaseAndIdNot(Integer eventId, String title, Integer excludeTaskId);
+    
     PageResult<Task> findTasksForEventBetween(Integer eventId, LocalDateTime start, LocalDateTime end, PageQuery pageQuery);
     
     long countTasksAuthoredByUser(Integer userId);
-
     long countByEventIdAndStatus(Integer eventId, TaskStatus status);
-
     long countByStatus(TaskStatus status);
-
-    
     long countTasksForEvent(Integer eventId);
 
     double sumCompletedWorkedHoursForUser(Integer userId);

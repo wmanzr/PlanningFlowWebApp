@@ -58,8 +58,8 @@ class SkillScoreEvaluatorPropertiesTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 exact,
-                cumulative
-        );
+                cumulative,
+                Map.of());
         final EventMode defaults = DomainFixtures.defaultEventMode();
         final EventMode mode = DomainFixtures.eventMode(MatchingMode.CRITICAL, defaults.maxGeographicDistance(), defaults.workloadPolicy());
         final MatchingContext context = DomainFixtures.matchingContext(t0.minusHours(1), mode, Map.of(1, snapshot));

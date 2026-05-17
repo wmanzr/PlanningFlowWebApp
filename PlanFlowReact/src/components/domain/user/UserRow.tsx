@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import Typography from '@mui/material/Typography';
-import { Badge, Card } from '@/components/ui';
+import { Badge, Card, EmailLink } from '@/components/ui';
 import type { UserResponseDto } from '@/types';
 export interface UserRowProps {
     user: UserResponseDto;
@@ -17,9 +17,10 @@ export const UserRow = ({ user, actions }: UserRowProps) => (<Card>
             @{user.username}
           </Typography>
         </div>
-        <Typography variant="caption" color="text.secondary" className="mt-1" sx={{ display: 'block' }}>
-          {user.email}
-        </Typography>
+        <EmailLink
+          email={user.email}
+          className="mt-1 block text-xs font-normal text-paragraph"
+        />
         <div className="mt-2 flex flex-wrap gap-1.5">
           {user.roles.map((role) => (<Badge key={role} tone="info">
               {role}

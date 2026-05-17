@@ -1,4 +1,4 @@
-export { TaskStatusBadge } from './TaskStatusBadge';
+export { TaskStatusBadge, TASK_STATUS_LABEL } from './TaskStatusBadge';
 export { TaskCard, type TaskCardProps } from './TaskCard';
 export { TaskForm, type TaskFormProps } from './TaskForm';
 export { TaskCreateWizard, type TaskCreateWizardProps } from './TaskCreateWizard';

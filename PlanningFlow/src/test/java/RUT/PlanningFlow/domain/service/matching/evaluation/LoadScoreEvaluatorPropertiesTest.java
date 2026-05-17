@@ -46,8 +46,8 @@ class LoadScoreEvaluatorPropertiesTest {
                 Duration.ZERO,
                 worked,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final WorkloadPolicy policy = DomainFixtures.workloadPolicy(maxDaily, Duration.ofMinutes(5));
         final EventMode mode = DomainFixtures.eventMode(MatchingMode.STANDARD, MatchingDistance.BUILDING_SCALE, policy);
         final MatchingContext context = DomainFixtures.matchingContext(t0.minusHours(1), mode, Map.of(1, snapshot));

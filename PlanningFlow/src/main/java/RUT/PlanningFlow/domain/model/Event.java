@@ -73,9 +73,7 @@ public class Event {
     public void validateTaskAttach(final Task task) {
         DomainAssert.notNull(task, "Задача обязательна", "TASK_REQUIRED");
         DomainAssert.isTrue(task.getEvent() == this, "Задача должна относиться к этому мероприятию", "TASK_WRONG_EVENT");
-        if (task.getStartTime().isBefore(this.schedule.getStart()) || task.getEndTime().isAfter(this.schedule.getEnd())) {
-            throw new DomainException("Время задачи выходит за временные рамки мероприятия", "TASK_OUT_OF_EVENT_RANGE");
-        }
+        task.assertScheduleWithinEventRange(this.schedule.getStart(), this.schedule.getEnd());
     }
 
     public double calculateProgress(final List<Task> tasks) {
@@ -221,12 +219,7 @@ public class Event {
         final DateTimeRange newSchedule = new DateTimeRange(newStartDate, newEndDate);
         DomainAssert.notNull(tasks, "Список задач обязателен для изменения дат мероприятия", "EVENT_TASKS_REQUIRED");
         for (final Task task : tasks) {
-            if (task.getStartTime().isBefore(newStartDate) || task.getEndTime().isAfter(newEndDate)) {
-                throw new DomainException(
-                        "Нельзя изменить даты мероприятия: задача выходит за новый диапазон",
-                        "TASK_OUT_OF_EVENT_RANGE"
-                );
-            }
+            task.assertScheduleWithinEventRange(newStartDate, newEndDate);
         }
         this.schedule = newSchedule;
     }

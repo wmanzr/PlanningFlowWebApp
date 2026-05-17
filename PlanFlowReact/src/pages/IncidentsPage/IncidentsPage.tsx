@@ -9,8 +9,9 @@ import { makeSelectIncidentsForEvent, selectIncidentsActionMeta, selectIncidents
 import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { fetchEventByIdThunk } from '@/store/slices/events/eventsSlice';
 import { selectEventById, selectEventDetailMeta } from '@/store/slices/events/selectors';
-import { Button, Card, CardHeader, EmptyState, ErrorMessage, LoadingArea, Modal, PageLayout, Pagination, Textarea, } from '@/components/ui';
-import { IncidentForm, IncidentRow } from '@/components/domain/incident';
+import { Button, Card, CardHeader, EmptyState, ErrorMessage, LoadingArea, Modal, PageLayout, Pagination, Select, Textarea, } from '@/components/ui';
+import { INCIDENT_STATUS_LABEL, IncidentForm, IncidentRow } from '@/components/domain/incident';
+import { buildStatusFilterOptions } from '@/utils/statusFilterOptions';
 import { EventStatus, IncidentStatus, asEventId, type IncidentCreateRequest, type IncidentResponseDto, type TaskResponseDto, } from '@/types';
 import { PATHS } from '../paths';
 const RESOLUTION_MIN_LENGTH = 5;
@@ -48,7 +49,15 @@ export const IncidentsPage = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [resolveTarget, setResolveTarget] = useState<IncidentResponseDto | null>(null);
     const [page, setPage] = useState(1);
+    const [statusFilter, setStatusFilter] = useState<IncidentStatus | ''>('');
     const [formTasks, setFormTasks] = useState<TaskResponseDto[]>([]);
+    const statusFilterOptions = useMemo(() => buildStatusFilterOptions(INCIDENT_STATUS_LABEL), []);
+    const filteredIncidents = useMemo(() => {
+        if (!statusFilter) {
+            return incidents;
+        }
+        return incidents.filter((incident) => incident.status === statusFilter);
+    }, [incidents, statusFilter]);
     const openCreateFromStateDone = useRef(false);
     const resolveForm = useForm<ResolveValues>({ defaultValues: { resolutionNotes: '' } });
     useEffect(() => {
@@ -58,7 +67,7 @@ export const IncidentsPage = () => {
     }, [dispatch, eventId]);
     useEffect(() => {
         setPage(1);
-    }, [eventId]);
+    }, [eventId, statusFilter]);
     useEffect(() => {
         if (eventId === undefined || !event || !hasCoordinator)
             return;
@@ -165,10 +174,14 @@ export const IncidentsPage = () => {
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(incidentsActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       {list.status === 'pending' && incidents.length === 0 ? <LoadingArea /> : null}
-      {incidents.length === 0 && list.status !== 'pending' ? (<EmptyState title="Инцидентов нет"/>) : null}
+      {filteredIncidents.length === 0 && list.status !== 'pending' ? (<EmptyState title={incidents.length === 0 ? 'Инцидентов нет' : 'Ничего не найдено'} description={incidents.length === 0 ? undefined : 'Измените фильтр по статусу.'}/>) : null}
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-5">
-          {incidents.map((incident) => (<IncidentRow key={incident.id} incident={incident} actions={<>
+          <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => {
+            setStatusFilter(e.target.value === '' ? '' : (e.target.value as IncidentStatus));
+            setPage(1);
+        }}/>
+          {filteredIncidents.map((incident) => (<IncidentRow key={incident.id} incident={incident} actions={<>
                   {incident.status === IncidentStatus.OPEN ? (<Button size="sm" onClick={() => {
                     void dispatch(acceptIncidentThunk(incident.id)).then((r) => {
                         if (acceptIncidentThunk.fulfilled.match(r)) {

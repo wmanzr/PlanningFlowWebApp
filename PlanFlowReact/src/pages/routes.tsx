@@ -5,7 +5,6 @@ import { RegisterPage } from './RegisterPage/RegisterPage';
 import { EventsListPage } from './EventsListPage';
 import { EventDetailPage } from './EventDetailPage';
 import { EventDashboardPage } from './EventDashboardPage';
-import { EventMapPage } from './EventMapPage';
 import { EventTasksPage } from './EventTasksPage/EventTasksPage';
 import { TaskDetailPage } from './TaskDetailPage';
 import { TaskMatchingPage } from './TaskMatchingPage';
@@ -59,7 +58,6 @@ export const buildRoutes = (): RouteObject[] => [
                     },
                     { path: '/events/:eventId', element: <EventDetailPage /> },
                     { path: '/events/:eventId/dashboard', element: <EventDashboardPage /> },
-                    { path: '/events/:eventId/map', element: <EventMapPage /> },
                     { path: '/events/:eventId/incidents', element: <IncidentsPage /> },
                     { path: '/incidents/:incidentId', element: <IncidentDetailPage /> },
                     { path: '/events/:eventId/tasks', element: <EventTasksPage /> },

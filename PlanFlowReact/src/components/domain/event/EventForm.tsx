@@ -1,7 +1,24 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import Typography from '@mui/material/Typography';
-import { Button, Input, MapView, Select, Textarea, fromDateAndTimeInputs, roundTimeToStep, addMinutes, coerceApiDateTimeToIso, toDateInput, toNaiveLocalIsoFromTimestamp, toTimeInputRoundedToStep, type MapMarker, } from '@/components/ui';
+import {
+    Button,
+    Input,
+    MapView,
+    MAP_ZOOM_OVERVIEW,
+    Select,
+    Textarea,
+    geoPointFromLatLng,
+    resolveMapViewportCenter,
+    fromDateAndTimeInputs,
+    roundTimeToStep,
+    addMinutes,
+    coerceApiDateTimeToIso,
+    toDateInput,
+    toNaiveLocalIsoFromTimestamp,
+    toTimeInputRoundedToStep,
+    type MapMarker,
+} from '@/components/ui';
 import { asIsoDateTime, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, type EventCreateRequest, type EventResponseDto, type EventUpdateRequest, } from '@/types';
 const TITLE_MAX_LENGTH = 200;
 const DESCRIPTION_MAX_LENGTH = 2000;
@@ -42,6 +59,7 @@ export interface EventFormProps {
 }
 export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventFormProps) => {
     const isEdit = initial !== undefined;
+    const [mapViewResetKey, setMapViewResetKey] = useState(0);
     const timeOptions = useMemo(() => buildTimeOptions(), []);
     const defaults = useMemo(() => {
         if (initial) {
@@ -65,7 +83,7 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
             endTime: toTimeInputRoundedToStep(endNaive, TIME_STEP_MINUTES),
         };
     }, [initial]);
-    const { register, handleSubmit, reset, setValue, control } = useForm<EventFormValues>({
+    const { register, handleSubmit, reset, setValue, trigger, control } = useForm<EventFormValues>({
         mode: 'onSubmit',
         defaultValues: {
             title: initial?.title ?? '',
@@ -85,11 +103,27 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
         const lng = Number(watchedLongitude);
         if (!Number.isFinite(lat) || !Number.isFinite(lng))
             return [];
-        return [{ id: 'event-pos', lat, lng, kind: 'event', label: 'Мероприятие' }];
+        return [
+            {
+                id: 'event-pos',
+                lat,
+                lng,
+                kind: 'event',
+                label: 'Мероприятие',
+                emphasis: 'primary',
+            },
+        ];
     }, [watchedLatitude, watchedLongitude]);
-    const mapCenter = mapMarkers.length > 0 && mapMarkers[0]
-        ? { latitude: mapMarkers[0].lat, longitude: mapMarkers[0].lng }
-        : undefined;
+    const mapViewportCenter = useMemo(
+        () => resolveMapViewportCenter(geoPointFromLatLng(initial?.latitude, initial?.longitude)),
+        [initial?.latitude, initial?.longitude],
+    );
+
+    const clearMapLocation = () => {
+        setValue('latitude', '', { shouldValidate: true });
+        setValue('longitude', '', { shouldValidate: true });
+        setMapViewResetKey((key) => key + 1);
+    };
     useEffect(() => {
         reset({
             title: initial?.title ?? '',
@@ -117,7 +151,12 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
                 startDate: asIsoDateTime(startIso),
                 endDate: asIsoDateTime(endIso),
             };
-            if (lat !== undefined && Number.isFinite(lat) && lng !== undefined && Number.isFinite(lng)) {
+            const hadLocation = initial.latitude !== undefined || initial.longitude !== undefined;
+            if (latStr === '' && lngStr === '') {
+                if (hadLocation) {
+                    update.clearLocation = true;
+                }
+            } else if (lat !== undefined && Number.isFinite(lat) && lng !== undefined && Number.isFinite(lng)) {
                 if (lat >= LATITUDE_MIN && lat <= LATITUDE_MAX && lng >= LONGITUDE_MIN && lng <= LONGITUDE_MAX) {
                     update.latitude = lat;
                     update.longitude = lng;
@@ -170,17 +209,24 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
               Нажмите на карту, чтобы выбрать точку.
             </Typography>
           </div>
-          {mapMarkers.length > 0 ? (<Button type="button" size="sm" variant="ghost" onClick={() => {
-                setValue('latitude', '', { shouldValidate: true });
-                setValue('longitude', '', { shouldValidate: true });
-            }}>
+          {mapMarkers.length > 0 ? (
+            <Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
               Очистить
-            </Button>) : null}
+            </Button>
+          ) : null}
         </div>
-        <MapView height={isEdit ? '200px' : '240px'} {...(mapCenter ? { center: mapCenter } : {})} markers={mapMarkers} onMapClick={(point) => {
-            setValue('latitude', String(point.latitude), { shouldValidate: true });
-            setValue('longitude', String(point.longitude), { shouldValidate: true });
-        }}/>
+        <MapView
+            height={isEdit ? '200px' : '240px'}
+            center={mapViewportCenter}
+            zoom={MAP_ZOOM_OVERVIEW}
+            viewResetKey={mapViewResetKey}
+            markers={mapMarkers}
+            onMapClick={(point) => {
+                setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
+                setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
+                void trigger(['latitude', 'longitude']);
+            }}
+        />
       </div>
       <div className="flex justify-end gap-2">
         {onCancel ? (<Button type="button" variant="ghost" onClick={onCancel}>

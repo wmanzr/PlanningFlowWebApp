@@ -15,6 +15,7 @@ public interface UpdateEventUseCase {
             LocalDateTime newStartDate,
             LocalDateTime newEndDate,
             GeoPoint newLocation,
+            boolean clearLocation,
             List<Integer> coordinatorIds
     );
 }

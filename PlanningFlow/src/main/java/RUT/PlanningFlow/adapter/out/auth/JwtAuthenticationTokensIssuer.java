@@ -6,11 +6,11 @@ import RUT.PlanningFlow.application.port.out.repository.RefreshTokenRepositoryPo
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.adapter.in.web.security.JwtProperties;
 import RUT.PlanningFlow.adapter.in.web.security.JwtProvider;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.Role;
 import RUT.PlanningFlow.domain.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -46,25 +46,25 @@ public class JwtAuthenticationTokensIssuer implements AuthenticationTokensIssuer
     public AuthTokenResponse rotate(final String refreshTokenValue) {
         final String raw = refreshTokenValue == null ? "" : refreshTokenValue.trim();
         if (raw.isEmpty()) {
-            throw new BadCredentialsException("Refresh token required");
+            throw new DomainException("Укажите refresh-токен", "REFRESH_TOKEN_REQUIRED");
         }
         try {
             final Claims claims = jwtProvider.parseAndValidateRefresh(raw);
             final int userId = JwtProvider.userIdFromSubject(claims);
             final String jti = JwtProvider.jtiFrom(claims);
             if (jti == null || jti.isBlank()) {
-                throw new BadCredentialsException("Invalid refresh token");
+                throw new DomainException("Сессия истекла. Войдите снова.", "REFRESH_TOKEN_INVALID");
             }
             final Instant now = Instant.now();
             final int consumed = refreshTokens.consumeRefreshToken(jti, userId, now);
             if (consumed == 0) {
-                throw new BadCredentialsException("Refresh token revoked or expired");
+                throw new DomainException("Сессия истекла. Войдите снова.", "REFRESH_TOKEN_INVALID");
             }
             final User user = users.findById(userId)
-                    .orElseThrow(() -> new BadCredentialsException("User not found"));
+                    .orElseThrow(() -> new DomainException("Сессия истекла. Войдите снова.", "REFRESH_TOKEN_INVALID"));
             return issueFreshPair(user);
         } catch (final JwtException e) {
-            throw new BadCredentialsException("Invalid refresh token", e);
+            throw new DomainException("Сессия истекла. Войдите снова.", "REFRESH_TOKEN_INVALID");
         }
     }
 

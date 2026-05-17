@@ -51,6 +51,7 @@ public class UpdateTaskService implements UpdateTaskUseCase {
             final LocalDateTime newStartTime,
             final LocalDateTime newEndTime,
             final GeoPoint newLocation,
+            final boolean clearLocation,
             final List<Integer> requiredSkillIds,
             final List<Integer> dependencyIds
     ) {
@@ -65,6 +66,7 @@ public class UpdateTaskService implements UpdateTaskUseCase {
 
         final Task task = exTask.get();
         PlanningAccessPolicy.assertCanManageTaskAsPlanner(actor, task);
+        task.assertAllowsPlannerMutations();
 
         if (newTitle != null) {
             final String trimmed = newTitle.trim();
@@ -85,7 +87,9 @@ public class UpdateTaskService implements UpdateTaskUseCase {
             DomainAssert.notNull(newEndTime, "Дата окончания обязательна при изменении дат", "TASK_END_DATE_REQUIRED");
             task.moveSchedule(newStartTime, newEndTime);
         }
-        if (newLocation != null) {
+        if (clearLocation) {
+            task.clearLocation();
+        } else if (newLocation != null) {
             task.updateLocation(newLocation);
         }
 

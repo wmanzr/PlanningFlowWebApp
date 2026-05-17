@@ -11,4 +11,3 @@ public record PageResult<T>(
         items = items == null ? List.of() : List.copyOf(items);
     }
 }
-

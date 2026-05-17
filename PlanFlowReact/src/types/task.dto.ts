@@ -38,6 +38,7 @@ export interface TaskUpdateRequest {
     newEndTime?: IsoDateTime;
     latitude?: number;
     longitude?: number;
+    clearLocation?: boolean;
     requiredSkillIds?: SkillId[];
     dependencyIds?: TaskId[];
 }

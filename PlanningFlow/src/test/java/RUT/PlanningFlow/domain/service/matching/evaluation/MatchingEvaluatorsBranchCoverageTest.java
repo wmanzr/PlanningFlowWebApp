@@ -42,8 +42,8 @@ class MatchingEvaluatorsBranchCoverageTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final MatchingContext ctx = DomainFixtures.matchingContext(T0.minusHours(1), DomainFixtures.defaultEventMode(), Map.of(1, snapshot));
 
         assertThat(geo.evaluate(task, snapshot, ctx)).isEqualTo(0.5);
@@ -64,8 +64,8 @@ class MatchingEvaluatorsBranchCoverageTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of()
-        );
+                Map.of(),
+                Map.of());
         final EventMode mode = new EventMode(MatchingMode.STANDARD, new MatchingDistance(1.0), WorkloadPolicy.defaults());
         final MatchingContext ctx = DomainFixtures.matchingContext(T0.minusHours(1), mode, Map.of(1, snapshot));
 
@@ -129,8 +129,8 @@ class MatchingEvaluatorsBranchCoverageTest {
                 Duration.ZERO,
                 Duration.ZERO,
                 Map.of(),
-                Map.of("medical", 1.0)
-        );
+                Map.of("medical", 1.0),
+                Map.of());
         final MatchingContext ctx = DomainFixtures.matchingContext(T0.minusHours(1), DomainFixtures.defaultEventMode(), Map.of(1, snapshot));
 
         assertThat(skillEval.evaluate(task, snapshot, ctx)).isZero();

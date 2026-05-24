@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="777ff698-74d4-41d8-ad76-f146e67db405" name="Changes" comment="v.1 commit">
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/landing/GetPublicLandingStatsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/landing/GetPublicLandingStatsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/CreateInternalResourceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/CreateInternalResourceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/DeleteInternalResourceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/DeleteInternalResourceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/GetResourceDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/GetResourceDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/ListResourcesService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/ListResourcesService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/MarkResourceBrokenService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/MarkResourceBrokenService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/MarkResourceOperationalService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/MarkResourceOperationalService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/UpdateInternalResourceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/resource/UpdateInternalResourceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/CreateSkillService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/CreateSkillService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/DeleteSkillService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/DeleteSkillService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/GetSkillDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/GetSkillDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/ListSkillCategoriesService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/ListSkillCategoriesService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/ListSkillsCatalogService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/skill/ListSkillsCatalogService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/GetUserDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/GetUserDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/ManageUserSkillsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/ManageUserSkillsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/UpdateProfileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/java/RUT/PlanningFlow/application/service/user/UpdateProfileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanningFlow/src/test/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/PlanningFlow/src/test/resources/application.properties" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;wmanzr&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/wmanzr/PlanningFlowWebApp.git&quot;,
+    &quot;accountId&quot;: &quot;6bd755ba-c2f0-4b81-82f6-9216bc7c208f&quot;
+  }
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3Ds5F5bPq7vt4MqkmITTFQMF67X" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.PlanningFlow [clean].executor": "Run",
+    "Maven.PlanningFlow [package].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Spring Boot.PlanningFlowApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/roman/Files/ProjectPlan",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Facets",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="PlanningFlowApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="21" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="RUT.PlanningFlow.PlanningFlowApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-cffe25b9f5b3-intellij.indexing.shared.core-IU-253.28294.334" />
+        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-IU-253.28294.334" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="777ff698-74d4-41d8-ad76-f146e67db405" name="Changes" comment="" />
+      <created>1779057832195</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779057832195</updated>
+      <workItem from="1779057833688" duration="1268000" />
+      <workItem from="1779643461567" duration="2055000" />
+      <workItem from="1779646596642" duration="168000" />
+    </task>
+    <task id="LOCAL-00001" summary="v.1 commit">
+      <option name="closed" value="true" />
+      <created>1779059151644</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779059151644</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="v.1 commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="v.1 commit" />
+  </component>
+</project>

@@ -2,10 +2,12 @@ package RUT.PlanningFlow.application.service.resource;
 
 import RUT.PlanningFlow.application.port.in.resource.CreateInternalResourceUseCase;
 import RUT.PlanningFlow.application.port.out.repository.InternalResourceRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.InternalResource;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,13 @@ public class CreateInternalResourceService implements CreateInternalResourceUseC
     }
 
     @Override
+    @CacheEvict(
+            cacheNames = {
+                    ApplicationRedisCacheConfiguration.CACHE_INTERNAL_RESOURCES,
+                    ApplicationRedisCacheConfiguration.CACHE_RESOURCE_DETAILS
+            },
+            allEntries = true
+    )
     public Integer execute(final String name, final ResourceType type, final String inventoryNumber) {
         DomainAssert.notBlank(name, "Название ресурса обязательно", "RESOURCE_NAME_REQUIRED");
         DomainAssert.notNull(type, "Тип ресурса обязателен", "RESOURCE_TYPE_REQUIRED");

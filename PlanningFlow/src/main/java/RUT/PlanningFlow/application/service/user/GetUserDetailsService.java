@@ -8,10 +8,12 @@ import RUT.PlanningFlow.application.port.out.repository.EventRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.ResourceBookingRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.TaskRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import RUT.PlanningFlow.domain.model.Role;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,11 @@ public class GetUserDetailsService implements GetUserDetailsQuery {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = ApplicationRedisCacheConfiguration.CACHE_USER_CARD,
+            key = "#userId",
+            unless = "#result == null || (#result instanceof T(java.util.Optional) && !#result.isPresent())"
+    )
     public Optional<UserResponseDto> execute(final Integer userId) {
         DomainAssert.notNull(userId, "ID пользователя обязателен", "USER_ID_REQUIRED");
         final Optional<User> user = userRepository.findById(userId);

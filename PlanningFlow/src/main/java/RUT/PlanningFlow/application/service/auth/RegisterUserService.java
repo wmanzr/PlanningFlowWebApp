@@ -5,11 +5,13 @@ import RUT.PlanningFlow.application.port.in.dto.AuthTokenResponse;
 import RUT.PlanningFlow.application.port.out.auth.AuthenticationTokensIssuer;
 import RUT.PlanningFlow.application.port.out.repository.RoleRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.Role;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +53,7 @@ public class RegisterUserService implements RegisterUserUseCase {
     }
 
     @Override
+    @CacheEvict(cacheNames = ApplicationRedisCacheConfiguration.CACHE_USERS_DIRECTORY, allEntries = true)
     public AuthTokenResponse register(
             final String username,
             final String rawPassword,

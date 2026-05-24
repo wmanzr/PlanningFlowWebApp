@@ -5,9 +5,11 @@ import RUT.PlanningFlow.application.dto.resource.InternalResourceResponseDto;
 import RUT.PlanningFlow.application.port.in.resource.GetResourceDetailsQuery;
 import RUT.PlanningFlow.application.port.out.repository.ExternalResourceRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.InternalResourceRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.model.ExternalResource;
 import RUT.PlanningFlow.domain.model.InternalResource;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,11 @@ public class GetResourceDetailsService implements GetResourceDetailsQuery {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = ApplicationRedisCacheConfiguration.CACHE_RESOURCE_DETAILS,
+            key = "#resourceId",
+            unless = "#result == null || (#result instanceof T(java.util.Optional) && !#result.isPresent())"
+    )
     public Optional<InternalResourceResponseDto> execute(final Integer resourceId) {
         DomainAssert.notNull(resourceId, "ID ресурса обязателен", "RESOURCE_ID_REQUIRED");
         final Optional<InternalResource> exResource = internalResourceRepository.findById(resourceId);

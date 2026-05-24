@@ -2,7 +2,10 @@ package RUT.PlanningFlow.application.service.resource;
 
 import RUT.PlanningFlow.application.port.in.resource.DeleteInternalResourceUseCase;
 import RUT.PlanningFlow.application.port.out.repository.InternalResourceRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,10 @@ public class DeleteInternalResourceService implements DeleteInternalResourceUseC
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = ApplicationRedisCacheConfiguration.CACHE_INTERNAL_RESOURCES, allEntries = true),
+            @CacheEvict(cacheNames = ApplicationRedisCacheConfiguration.CACHE_RESOURCE_DETAILS, key = "#resourceId")
+    })
     public boolean execute(final Integer resourceId) {
         if (resourceId == null) {
             return false;

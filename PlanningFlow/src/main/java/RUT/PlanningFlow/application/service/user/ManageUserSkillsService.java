@@ -5,6 +5,7 @@ import RUT.PlanningFlow.application.port.out.repository.SkillRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserSkillRepositoryPort;
 import RUT.PlanningFlow.application.security.PlanningAccessPolicy;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.enums.SkillTier;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import RUT.PlanningFlow.domain.exception.DomainException;
@@ -12,6 +13,7 @@ import RUT.PlanningFlow.domain.model.Skill;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.model.UserSkill;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,7 @@ public class ManageUserSkillsService implements ManageUserSkillsUseCase {
     }
 
     @Override
+    @CacheEvict(cacheNames = ApplicationRedisCacheConfiguration.CACHE_USER_CARD, key = "#userId")
     public List<Integer> execute(final Integer userId, final Map<Integer, SkillTier> skillTiers) {
         DomainAssert.notNull(userId, "ID пользователя обязателен", "USER_ID_REQUIRED");
         DomainAssert.notNull(skillTiers, "Список навыков обязателен", "USER_SKILLS_REQUIRED");

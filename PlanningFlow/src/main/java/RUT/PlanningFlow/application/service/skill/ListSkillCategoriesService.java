@@ -2,7 +2,9 @@ package RUT.PlanningFlow.application.service.skill;
 
 import RUT.PlanningFlow.application.port.in.skill.ListSkillCategoriesQuery;
 import RUT.PlanningFlow.application.port.out.repository.SkillRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class ListSkillCategoriesService implements ListSkillCategoriesQuery {
     }
 
     @Override
+    @Cacheable(cacheNames = ApplicationRedisCacheConfiguration.CACHE_SKILL_CATEGORIES)
     public List<String> execute() {
         return skillRepository.findDistinctCategories();
     }

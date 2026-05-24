@@ -2,7 +2,9 @@ package RUT.PlanningFlow.application.service.skill;
 
 import RUT.PlanningFlow.application.port.in.skill.DeleteSkillUseCase;
 import RUT.PlanningFlow.application.port.out.repository.SkillRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,14 @@ public class DeleteSkillService implements DeleteSkillUseCase {
     }
 
     @Override
+    @CacheEvict(
+            cacheNames = {
+                    ApplicationRedisCacheConfiguration.CACHE_SKILLS_CATALOG,
+                    ApplicationRedisCacheConfiguration.CACHE_SKILL_CATEGORIES,
+                    ApplicationRedisCacheConfiguration.CACHE_SKILL_DETAILS
+            },
+            allEntries = true
+    )
     public boolean execute(final Integer skillId) {
         return skillRepository.deleteCatalogEntry(skillId);
     }

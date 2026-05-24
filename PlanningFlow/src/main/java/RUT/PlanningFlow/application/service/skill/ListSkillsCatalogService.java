@@ -5,8 +5,10 @@ import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
 import RUT.PlanningFlow.application.port.in.skill.ListSkillsCatalogQuery;
 import RUT.PlanningFlow.application.port.out.repository.SkillRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.model.Skill;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,10 @@ public class ListSkillsCatalogService implements ListSkillsCatalogQuery {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = ApplicationRedisCacheConfiguration.CACHE_SKILLS_CATALOG,
+            key = "(#name ?: '') + '|' + #pageQuery.page + '|' + #pageQuery.size"
+    )
     public PageResult<SkillResponseDto> execute(final String name, final PageQuery pageQuery) {
         DomainAssert.notNull(pageQuery, "Параметры пагинации обязательны", "PAGE_QUERY_REQUIRED");
 

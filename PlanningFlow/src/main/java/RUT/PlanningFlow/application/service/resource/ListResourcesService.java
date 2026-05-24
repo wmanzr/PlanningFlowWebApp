@@ -5,8 +5,10 @@ import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
 import RUT.PlanningFlow.application.port.in.resource.ListResourcesQuery;
 import RUT.PlanningFlow.application.port.out.repository.InternalResourceRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.model.InternalResource;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,10 @@ public class ListResourcesService implements ListResourcesQuery {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = ApplicationRedisCacheConfiguration.CACHE_INTERNAL_RESOURCES,
+            key = "(#name ?: '') + '|' + #pageQuery.page + '|' + #pageQuery.size"
+    )
     public PageResult<InternalResourceResponseDto> execute(final String name, final PageQuery pageQuery) {
         DomainAssert.notNull(pageQuery, "Параметры пагинации обязательны", "PAGE_QUERY_REQUIRED");
 

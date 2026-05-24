@@ -6,10 +6,12 @@ import RUT.PlanningFlow.application.port.out.repository.EventRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.IncidentRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.TaskRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
+import RUT.PlanningFlow.config.cache.ApplicationRedisCacheConfiguration;
 import RUT.PlanningFlow.domain.enums.AssignStatus;
 import RUT.PlanningFlow.domain.enums.EventStatus;
 import RUT.PlanningFlow.domain.enums.IncidentStatus;
 import RUT.PlanningFlow.domain.enums.TaskStatus;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,6 +37,7 @@ public class GetPublicLandingStatsService {
         this.assignmentRepository = assignmentRepository;
     }
 
+    @Cacheable(cacheNames = ApplicationRedisCacheConfiguration.CACHE_LANDING_STATS)
     public PublicLandingStatsDto getLandingStats() {
         return new PublicLandingStatsDto(
                 eventRepository.countAllEvents(),

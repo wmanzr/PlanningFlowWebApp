@@ -17,10 +17,7 @@ export const UserRow = ({ user, actions }: UserRowProps) => (<Card>
             @{user.username}
           </Typography>
         </div>
-        <EmailLink
-          email={user.email}
-          className="mt-1 block text-xs font-normal text-paragraph"
-        />
+        <EmailLink email={user.email} className="mt-1 block text-xs font-normal text-paragraph"/>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {user.roles.map((role) => (<Badge key={role} tone="info">
               {role}

@@ -105,7 +105,7 @@ export function UserActivityReadOnly({ user, className }: UserActivityReadOnlyPr
             </Typography>
           </div>
         </div>) : (<Typography variant="body2" color="text.secondary">
-          Сводка активности показывается для организаторов, координаторов и исполнителей.
+          Нет данных.
         </Typography>)}
     </Card>);
 }

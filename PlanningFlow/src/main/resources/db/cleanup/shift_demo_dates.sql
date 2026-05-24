@@ -1,12 +1,12 @@
--- Сдвиг всех операционных дат в БД на новый тестовый день (время суток сохраняется).
--- Не трогает: users.birth_date, refresh_tokens.expires_at
---
--- Перед запуском поменяйте даты:
-\set old_demo_date '2026-05-20'
-\set new_demo_date '2026-05-17'
---
--- docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---   < PlanningFlow/src/main/resources/db/cleanup/shift_demo_dates.sql
+
+
+
+
+\set old_demo_date '2026-05-17'
+\set new_demo_date '2026-05-19'
+
+
+
 
 BEGIN;
 

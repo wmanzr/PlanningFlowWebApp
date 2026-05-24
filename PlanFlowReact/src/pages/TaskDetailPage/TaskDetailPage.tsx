@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -8,6 +8,8 @@ import IconButton from '@mui/material/IconButton';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { allocateTaskResourcesThunk, cancelTaskThunk, fetchTaskByIdThunk, markTaskDoneThunk, startTaskExecutionThunk, unassignTaskThunk, updateTaskThunk, tasksActions, } from '@/store/slices/tasks/tasksSlice';
+import { createIncidentThunk, fetchIncidentsForEventThunk, incidentsActions, } from '@/store/slices/incidents/incidentsSlice';
+import { makeSelectIncidentsForEvent, selectIncidentsActionMeta, selectIncidentsListMeta, } from '@/store/slices/incidents/selectors';
 import { fetchBookingsForTaskThunk } from '@/store/slices/bookings/bookingsSlice';
 import { makeSelectBookingsForTask, selectBookingsListMeta, } from '@/store/slices/bookings/selectors';
 import { fetchEventByIdThunk } from '@/store/slices/events/eventsSlice';
@@ -22,13 +24,17 @@ import { toastsActions } from '@/store/slices/toasts/toastsSlice';
 import { EventMapPanel } from '@/components/domain/event';
 import { surnameWithInitials } from '@/components/domain/event/EventCard';
 import { SelfOrProfileLink } from '@/components/domain/user/SelfOrProfileLink';
-import { Badge, Button, Card, CardHeader, ErrorMessage, LoadingArea, MapView, Modal, PageLayout, Textarea, formatDateTime, slicePreviewList, type MapMarker, } from '@/components/ui';
+import { Badge, Button, Card, CardHeader, EmptyState, ErrorMessage, LoadingArea, Modal, PageLayout, Textarea, formatDateTime, slicePreviewList, type MapMarker, } from '@/components/ui';
 import { TaskAssignMatchingModal, TaskForm, TaskStatusBadge } from '@/components/domain/task';
 import { AllocateResourcesForm, BookingRow } from '@/components/domain/booking';
-import { AssignStatus, TaskStatus, UserRole, type EventId, asAssignmentId, asEventId, asTaskId, asUserId, type TaskCreateRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
+import { IncidentCard, IncidentForm } from '@/components/domain/incident';
+import { AssignStatus, EventStatus, TaskStatus, UserRole, type AppApiError, type EventId, type IncidentCreateRequest, asAssignmentId, asEventId, asTaskId, asUserId, type TaskCreateRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
 import { eventMayActivateWhenExecutorStartsTask } from '@/utils/eventActivationOnTaskStart';
 import { userIdsEqual } from '@/utils/userIdsEqual';
+import { userCanReserveTaskResources } from '@/utils/userCanReserveTaskResources';
+import { validationErrorsToToastMessage } from '@/utils/validationErrorsToToastMessage';
 import { PATHS } from '../paths';
+const INCIDENT_PREVIEW_ROW = 'flex min-w-0 shrink-0 flex-col';
 function isExecutorParticipantView(user: ReturnType<typeof selectCurrentUser>): boolean {
     if (!user?.roles?.length)
         return false;
@@ -135,6 +141,7 @@ export const TaskDetailPage = () => {
         eventId: string;
         taskId: string;
     }>();
+    const navigate = useNavigate();
     const taskId = useMemo(() => {
         const num = Number.parseInt(params.taskId ?? '', 10);
         return Number.isFinite(num) ? asTaskId(num) : undefined;
@@ -153,6 +160,7 @@ export const TaskDetailPage = () => {
     const usersAction = useAppSelector(selectUsersActionMeta);
     const user = useAppSelector(selectCurrentUser);
     const isExecutorView = isExecutorParticipantView(user);
+    const canReserveResources = userCanReserveTaskResources(user?.roles);
     const bookingsList = useAppSelector(selectBookingsListMeta);
     const selectBookingsForTask = useMemo(() => makeSelectBookingsForTask(taskId), [taskId]);
     const bookingsForTask = useAppSelector(selectBookingsForTask);
@@ -161,11 +169,28 @@ export const TaskDetailPage = () => {
         return slicePreviewList(sorted);
     }, [bookingsForTask]);
     const bookingsMoreCount = bookingsPreview.moreCount;
+    const selectIncidentsForEvent = useMemo(() => makeSelectIncidentsForEvent(eventId), [eventId]);
+    const incidentsForEvent = useAppSelector(selectIncidentsForEvent);
+    const incidentsList = useAppSelector(selectIncidentsListMeta);
+    const incidentsAction = useAppSelector(selectIncidentsActionMeta);
+    const hasCoordinator = (event?.coordinatorIds?.length ?? 0) > 0;
+    const eventClosed = !!event && (event.status === EventStatus.COMPLETED || event.status === EventStatus.CANCELLED);
+    const incidentsForThisTask = useMemo(() => {
+        if (!task)
+            return [];
+        const tid = Number(task.id);
+        return incidentsForEvent
+            .filter((i) => i.taskId !== undefined && Number(i.taskId) === tid)
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }, [incidentsForEvent, task]);
+    const taskIncidentsPreview = useMemo(() => slicePreviewList(incidentsForThisTask), [incidentsForThisTask]);
+    const taskIncidentsMoreCount = taskIncidentsPreview.moreCount;
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isMatchingOpen, setIsMatchingOpen] = useState(false);
     const [isAllocateResourcesOpen, setIsAllocateResourcesOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    const [isCreateIncidentOpen, setIsCreateIncidentOpen] = useState(false);
     useEffect(() => {
         if (taskId !== undefined)
             void dispatch(fetchTaskByIdThunk(taskId));
@@ -180,13 +205,33 @@ export const TaskDetailPage = () => {
             void dispatch(fetchEventByIdThunk(eventId));
     }, [dispatch, eventId]);
     useEffect(() => {
+        if (!isExecutorView || eventId === undefined || !event || !hasCoordinator)
+            return;
+        void dispatch(fetchIncidentsForEventThunk({ eventId, query: { page: 1, size: 100 } }));
+    }, [dispatch, event, eventId, hasCoordinator, isExecutorView]);
+    useEffect(() => {
         void dispatch(fetchSkillsThunk({ page: 1, size: 500 }));
     }, [dispatch]);
+    useEffect(() => {
+        if (!canReserveResources)
+            setIsAllocateResourcesOpen(false);
+    }, [canReserveResources]);
     const refreshTaskBookings = useCallback(() => {
         if (taskId === undefined)
             return;
         void dispatch(fetchBookingsForTaskThunk({ taskId, query: { page: 1, size: 100 } }));
     }, [dispatch, taskId]);
+    const handleCreateIncidentFromTask = useCallback((body: IncidentCreateRequest) => {
+        if (eventId === undefined)
+            return;
+        void dispatch(createIncidentThunk(body)).then((result) => {
+            if (createIncidentThunk.fulfilled.match(result)) {
+                setIsCreateIncidentOpen(false);
+                void dispatch(fetchIncidentsForEventThunk({ eventId, query: { page: 1, size: 100 } }));
+                navigate(PATHS.incidentDetail(result.payload));
+            }
+        });
+    }, [dispatch, eventId, navigate]);
     const depSig = task?.dependencyIds.join(',') ?? '';
     useEffect(() => {
         if (isExecutorView)
@@ -286,7 +331,12 @@ export const TaskDetailPage = () => {
                 ttlMs: 4000,
             }));
         }
-        catch {
+        catch (raw: unknown) {
+            dispatch(toastsActions.push({
+                level: 'error',
+                message: validationErrorsToToastMessage(raw as AppApiError),
+                ttlMs: 6000,
+            }));
         }
     };
     const handleAcceptAssignment = () => {
@@ -328,6 +378,7 @@ export const TaskDetailPage = () => {
             <TaskScheduleCountdown startIso={task.startTime} endIso={task.endTime}/>
           </div>}>
         {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(tasksActions.clearActionError())}/>) : null}
+        {incidentsAction.error ? (<ErrorMessage message={incidentsAction.error.message} onShown={() => dispatch(incidentsActions.clearActionError())}/>) : null}
 
         <Card className="overflow-hidden border-border/70 bg-gradient-to-br from-surface via-bg to-surface-muted/30 shadow-lg">
           <div className="border-b border-border/50 bg-surface-muted/25 px-5 py-4">
@@ -366,7 +417,7 @@ export const TaskDetailPage = () => {
                   Подтверждение участия
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Подтвердите назначение или откажитесь — координатор увидит статус.
+                  Подтвердите назначение или откажитесь.
                 </Typography>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" loading={usersAction.status === 'pending'} onClick={handleAcceptAssignment}>
@@ -399,9 +450,7 @@ export const TaskDetailPage = () => {
                 ? `Подтвердили участие: ${participantAcceptedCount} из ${participantAssignmentsVisible.length}`
                 : 'Активных назначений нет'}/>
           <div className="space-y-3 px-5 pb-5">
-            {participantAssignmentsVisible.length === 0 ? (<Typography variant="body2" color="text.secondary">
-                Назначений нет.
-              </Typography>) : (<ul className="space-y-2">
+            {participantAssignmentsVisible.length === 0 ? (<EmptyState title="Назначений нет"/>) : (<ul className="space-y-2">
                 {participantAssignmentsVisible.map((a) => (<li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/50 bg-surface-muted/20 px-3 py-2">
                     <span className="font-medium text-headline">
                       <SelfOrProfileLink subjectUserId={a.userId} viewerUserId={user?.id} nameLabel={surnameWithInitials(a.participantFullName)} className="font-medium text-primary underline-offset-2 hover:underline"/>
@@ -412,41 +461,60 @@ export const TaskDetailPage = () => {
           </div>
         </Card>
 
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader title={<span className="inline-flex items-center gap-0.5">
-                Ресурсы
-                <TaskBookingsRefreshIcon listPending={bookingsList.status === 'pending'} onRefresh={refreshTaskBookings}/>
-              </span>} subtitle="Зарезервировано для этой задачи" actions={<Link to={PATHS.taskBookings(eventId, task.id)}>
-                <Button size="sm" variant="ghost">
-                  Подробнее
-                </Button>
-              </Link>}/>
-          <div className="space-y-3 px-5 pb-5">
-            {bookingsList.error ? <ErrorMessage message={bookingsList.error.message}/> : null}
-            {bookingsList.status === 'pending' && bookingsForTask.length === 0 ? <LoadingArea /> : null}
-            {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? (<Typography variant="body2" color="text.secondary">
-                Бронирований нет.
-              </Typography>) : (<div className="flex flex-col gap-3">
-                {bookingsPreview.preview.map((b) => (<BookingRow key={b.id} booking={b}/>))}
-                {bookingsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
-                    и еще {bookingsMoreCount} {bookingsRemainingWord(bookingsMoreCount)}
-                  </Typography>) : null}
-              </div>)}
-          </div>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader title={<span className="inline-flex items-center gap-0.5">
+                  Ресурсы
+                  <TaskBookingsRefreshIcon listPending={bookingsList.status === 'pending'} onRefresh={refreshTaskBookings}/>
+                </span>} subtitle="Зарезервировано для этой задачи" actions={<Link to={PATHS.taskBookings(eventId, task.id)}>
+                  <Button size="sm" variant="ghost">
+                    Подробнее
+                  </Button>
+                </Link>}/>
+            <div className="space-y-3 px-5 pb-5">
+              {bookingsList.error ? <ErrorMessage message={bookingsList.error.message}/> : null}
+              {bookingsList.status === 'pending' && bookingsForTask.length === 0 ? <LoadingArea /> : null}
+              {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? <EmptyState title="Резервов нет"/> : (<div className="flex flex-col gap-3">
+                  {bookingsPreview.preview.map((b) => (<BookingRow key={b.id} booking={b}/>))}
+                  {bookingsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
+                      и еще {bookingsMoreCount} {bookingsRemainingWord(bookingsMoreCount)}
+                    </Typography>) : null}
+                </div>)}
+            </div>
+          </Card>
 
-        <Card className="overflow-hidden border-border/60 shadow-sm">
-          <CardHeader title="Карта" subtitle="Точки мероприятия и задачи (если заданы координаты)"/>
-          <div className="px-3 pb-3">
-            <MapView
-              height="280px"
-              zoom={12}
-              {...(mapCenter ? { center: mapCenter } : {})}
-              markers={mapMarkers}
-              showLegend={mapMarkers.length > 1}
-            />
-          </div>
-        </Card>
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader title="Инциденты" {...(hasCoordinator ? { subtitle: `По этой задаче: ${incidentsForThisTask.length}` } : {})} actions={<div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" type="button" disabled={!hasCoordinator || eventClosed} onClick={() => setIsCreateIncidentOpen(true)}>
+                  Сообщить
+                </Button>
+                <Link to={PATHS.eventIncidents(eventId)}>
+                  <Button size="sm" variant="ghost">
+                    Все
+                  </Button>
+                </Link>
+              </div>}/>
+            <div className="space-y-3 px-5 pb-5">
+              {!hasCoordinator ? (<EmptyState title="Недоступно"/>) : incidentsList.status === 'pending' && incidentsForThisTask.length === 0 ? (<LoadingArea />) : incidentsForThisTask.length === 0 ? (<EmptyState title="Инцидентов нет"/>) : (<>
+                  <div className="flex flex-col gap-2">
+                    {taskIncidentsPreview.preview.map((incident) => (<div key={incident.id} className={INCIDENT_PREVIEW_ROW} role="button" tabIndex={0} onClick={() => navigate(PATHS.incidentDetail(incident.id))} onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate(PATHS.incidentDetail(incident.id));
+                        }
+                    }}>
+                        <IncidentCard incident={incident} variant="preview" className="w-full shrink-0"/>
+                      </div>))}
+                  </div>
+                  {taskIncidentsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
+                      и еще {taskIncidentsMoreCount}
+                    </Typography>) : null}
+                </>)}
+            </div>
+          </Card>
+        </div>
+
+        <EventMapPanel markers={mapMarkers} expandModalTitle="Карта задачи" {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
 
         <div className="flex flex-wrap gap-2">
           <Link to={PATHS.myTasks}>
@@ -473,6 +541,16 @@ export const TaskDetailPage = () => {
             </>}>
           <Textarea label="Причина" rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Кратко укажите причину"/>
         </Modal>
+
+        <Modal open={isCreateIncidentOpen && !!user && !eventClosed && hasCoordinator} onClose={() => {
+                dispatch(incidentsActions.clearActionError());
+                setIsCreateIncidentOpen(false);
+            }} title="Новый инцидент" size="md">
+          {isCreateIncidentOpen && user && event && hasCoordinator ? (<IncidentForm reporterId={user.id} eventId={event.id} tasks={[task]} defaultTaskId={task.id} submitting={incidentsAction.status === 'pending'} onCancel={() => {
+                    dispatch(incidentsActions.clearActionError());
+                    setIsCreateIncidentOpen(false);
+                }} onSubmit={handleCreateIncidentFromTask}/>) : null}
+        </Modal>
       </PageLayout>);
     }
     return (<PageLayout title={task.title} description={event
@@ -485,8 +563,7 @@ export const TaskDetailPage = () => {
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(tasksActions.clearActionError())}/>) : null}
       {showEventActivationHint ? (<Typography variant="body2" color="text.secondary" className="mb-4 max-w-3xl">
           Мероприятие «{event?.title ?? '—'}» в статусе планирования, срок уже начался. После нажатия «В работу» оно
-          станет активным, если это первый переход любой задачи этого мероприятия в статус «в работе» (как на
-          сервере).
+          перейдёт в активный статус, если это первая задача мероприятия, взятая в работу.
         </Typography>) : null}
       <Card>
         <CardHeader title={<div className="flex items-center gap-3">
@@ -518,12 +595,12 @@ export const TaskDetailPage = () => {
                   </Badge>)))}
             </dd>
           </div>
-          <div className="md:col-span-2">
+          {task.dependencyIds.length > 0 ? (<div className="md:col-span-2">
             <dt className="text-xs uppercase tracking-wide text-paragraph">Зависимости</dt>
             <dd className="mt-1 flex flex-wrap gap-2">
-              {task.dependencyIds.length === 0 ? (<span className="text-paragraph">—</span>) : (task.dependencyIds.map((id) => (<TaskDependencyLink key={id} eventId={eventId} depId={id}/>)))}
+              {task.dependencyIds.map((id) => (<TaskDependencyLink key={id} eventId={eventId} depId={id}/>))}
             </dd>
-          </div>
+          </div>) : null}
         </dl>
       </Card>
 
@@ -550,7 +627,7 @@ export const TaskDetailPage = () => {
         </div>
       </Card>
 
-      <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})} />
+      <EventMapPanel markers={mapMarkers} expandModalTitle="Карта задачи" {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
 
       <Card>
         <CardHeader title={<span className="inline-flex items-center gap-0.5">
@@ -562,16 +639,14 @@ export const TaskDetailPage = () => {
                   Управление резервами
                 </Button>
               </Link>
-              <Button size="sm" disabled={!isAssignable} onClick={() => setIsAllocateResourcesOpen(true)}>
-                Забронировать ресурс
-              </Button>
+              {canReserveResources ? (<Button size="sm" onClick={() => setIsAllocateResourcesOpen(true)}>
+                  Забронировать ресурс
+                </Button>) : null}
             </>}/>
         <div className="space-y-3 px-5 pb-5">
           {bookingsList.error ? <ErrorMessage message={bookingsList.error.message}/> : null}
           {bookingsList.status === 'pending' && bookingsForTask.length === 0 ? <LoadingArea /> : null}
-          {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? (<Typography variant="body2" color="text.secondary">
-              Бронирований нет — укажите наименование и нажмите «Забронировать ресурс».
-            </Typography>) : (<div className="flex flex-col gap-3">
+          {bookingsForTask.length === 0 && bookingsList.status !== 'pending' ? <EmptyState title="Резервов нет"/> : (<div className="flex flex-col gap-3">
               {bookingsPreview.preview.map((b) => (<BookingRow key={b.id} booking={b}/>))}
               {bookingsMoreCount > 0 ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', pt: 0.5 }}>
                   и еще {bookingsMoreCount} {bookingsRemainingWord(bookingsMoreCount)}
@@ -582,30 +657,30 @@ export const TaskDetailPage = () => {
 
       <TaskAssignMatchingModal open={isMatchingOpen} onClose={() => setIsMatchingOpen(false)} taskId={task.id} eventId={eventId} initialPickCount={suggestedMatchingPickCount} onAssigned={() => void dispatch(fetchTaskByIdThunk(task.id))}/>
 
-      <Modal open={isAllocateResourcesOpen} onClose={() => setIsAllocateResourcesOpen(false)} title="Забронировать ресурс" size="ml">
-        <>
+      <Modal open={canReserveResources && isAllocateResourcesOpen} onClose={() => setIsAllocateResourcesOpen(false)} title="Забронировать ресурс" size="ml">
+        {canReserveResources ? (<>
           <CardHeader title={`Задача «${task.title}»`}/>
           <AllocateResourcesForm defaultFrom={task.startTime} defaultTo={task.endTime} {...(event
-        ? {
-            eventForBookingWindow: {
-                startDate: event.startDate,
-                endDate: event.endDate,
-            },
-        }
-        : {})} submitting={action.status === 'pending'} onCancel={() => setIsAllocateResourcesOpen(false)} onSubmit={(body) => {
-            void dispatch(allocateTaskResourcesThunk({ id: task.id, body })).then((result) => {
-                if (allocateTaskResourcesThunk.fulfilled.match(result)) {
-                    setIsAllocateResourcesOpen(false);
-                    void dispatch(fetchBookingsForTaskThunk({ taskId: task.id, query: { page: 1, size: 100 } }));
-                    dispatch(toastsActions.push({
-                        level: 'success',
-                        message: 'Ресурс забронирован',
-                        ttlMs: 4000,
-                    }));
-                }
-            });
-        }}/>
-        </>
+            ? {
+                eventForBookingWindow: {
+                    startDate: event.startDate,
+                    endDate: event.endDate,
+                },
+            }
+            : {})} submitting={action.status === 'pending'} onCancel={() => setIsAllocateResourcesOpen(false)} onSubmit={(body) => {
+                void dispatch(allocateTaskResourcesThunk({ id: task.id, body })).then((result) => {
+                    if (allocateTaskResourcesThunk.fulfilled.match(result)) {
+                        setIsAllocateResourcesOpen(false);
+                        void dispatch(fetchBookingsForTaskThunk({ taskId: task.id, query: { page: 1, size: 100 } }));
+                        dispatch(toastsActions.push({
+                            level: 'success',
+                            message: 'Ресурс забронирован',
+                            ttlMs: 4000,
+                        }));
+                    }
+                });
+            }}/>
+        </>) : null}
       </Modal>
 
       <Modal open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Редактирование задачи" size="lg">

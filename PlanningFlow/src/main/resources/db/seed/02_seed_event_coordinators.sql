@@ -1,4 +1,4 @@
--- Шаг 2/9: координаторы мероприятий.
+
 \set demo_date '2026-05-17'
 
 BEGIN;
@@ -22,7 +22,7 @@ WHERE e.start_date::date = :'demo_date'::date
       WHERE ec.event_id = e.id AND ec.user_id = coord.id
   );
 
--- Организатор wmanzr — второй координатор на 4 крупных площадках
+
 INSERT INTO event_coordinators (event_id, user_id)
 SELECT e.id, org.id
 FROM events e

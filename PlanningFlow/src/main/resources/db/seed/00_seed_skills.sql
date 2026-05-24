@@ -1,9 +1,9 @@
--- Справочник навыков (43 позиции, 10 категорий).
--- Повторный запуск: ON CONFLICT (name) DO NOTHING.
--- Запускать до 05_seed_participants и 04_seed_task_required_skills.
---
--- docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---   < PlanningFlow/src/main/resources/db/seed/00_seed_skills.sql
+
+
+
+
+
+
 
 BEGIN;
 

@@ -90,7 +90,7 @@ export const buildRoutes = (): RouteObject[] => [
                     },
                     {
                         path: PATHS.skills,
-                        element: (<RequireRole roles={[UserRole.ORGANIZER, UserRole.PARTICIPANT, UserRole.ADMIN]} fallback={<Navigate to={PATHS.forbidden} replace/>}>
+                        element: (<RequireRole roles={[UserRole.ADMIN]} fallback={<Navigate to={PATHS.forbidden} replace/>}>
                 <SkillsPage />
               </RequireRole>),
                     },

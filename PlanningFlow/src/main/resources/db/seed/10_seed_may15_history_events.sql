@@ -1,18 +1,18 @@
--- История на 15 мая: 3 мероприятия (ACTIVE), 2–6 задач в каждом (все DONE),
--- назначения на зарегистрированных волонтёров, навыки, зависимости, бронирования, инциденты.
---
--- Требуется: users/roles, skills, resources (00_seed_skills, 00_seed_internal_resources,
--- 05_seed_participants или аналог с volonter003+).
---
--- Запуск:
---   docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---     < PlanningFlow/src/main/resources/db/seed/10_seed_may15_history_events.sql
+
+
+
+
+
+
+
+
+
 
 \set history_date '2026-05-15'
 
 BEGIN;
 
--- --- идемпотентная очистка трёх мероприятий ---
+
 DELETE FROM incidents i
 USING events e
 WHERE i.event_id = e.id
@@ -87,7 +87,7 @@ WHERE title IN (
     'Семейный пикник «Зелёная аллея» (15.05)'
 );
 
--- --- мероприятия ---
+
 INSERT INTO events (
     title,
     description,
@@ -160,7 +160,7 @@ WHERE e.title IN (
     'Семейный пикник «Зелёная аллея» (15.05)'
 );
 
--- --- задачи (все DONE) ---
+
 INSERT INTO tasks (
     title,
     status,
@@ -189,18 +189,18 @@ SELECT
     ),
     e.id
 FROM (VALUES
-    -- Сокольники: 4 задачи (d_lat, d_lon — смещение от центра мероприятия)
+
     ('Майский фестиваль в Сокольниках (15.05)', 'Монтаж входной арки',           '2026-05-15 08:00', '2026-05-15 10:00',  0.00120,  0.00040),
     ('Майский фестиваль в Сокольниках (15.05)', 'Регистрация гостей у входа',    '2026-05-15 10:00', '2026-05-15 14:00',  0.00035,  0.00055),
     ('Майский фестиваль в Сокольниках (15.05)', 'Дежурство у главной сцены',     '2026-05-15 14:00', '2026-05-15 18:30', -0.00090,  0.00110),
     ('Майский фестиваль в Сокольниках (15.05)', 'Вечерний демонтаж площадки',    '2026-05-15 18:30', '2026-05-15 19:30', -0.00055, -0.00210),
 
-    -- Кузнецкий: 3 задачи
+
     ('Арт-двор на Кузнецком мосту (15.05)', 'Оформление стендов во дворе',       '2026-05-15 11:00', '2026-05-15 13:30',  0.00045, -0.00035),
     ('Арт-двор на Кузнецком мосту (15.05)', 'Проведение мастер-классов',         '2026-05-15 13:30', '2026-05-15 17:00', -0.00070,  0.00095),
     ('Арт-двор на Кузнецком мосту (15.05)', 'Сбор экспозиции и упаковка',        '2026-05-15 19:00', '2026-05-15 21:00',  0.00160, -0.00185),
 
-    -- Пикник: 5 задач
+
     ('Семейный пикник «Зелёная аллея» (15.05)', 'Разметка площадки и навесов',   '2026-05-15 09:00', '2026-05-15 10:30',  0.00050,  0.00030),
     ('Семейный пикник «Зелёная аллея» (15.05)', 'Пункт выдачи пледов и ковриков', '2026-05-15 10:00', '2026-05-15 14:00', -0.00035,  0.00115),
     ('Семейный пикник «Зелёная аллея» (15.05)', 'Детская анимационная зона',     '2026-05-15 11:00', '2026-05-15 16:00',  0.00105, -0.00105),
@@ -210,7 +210,7 @@ FROM (VALUES
 JOIN events e ON e.title = v.event_title
 WHERE e.start_date::date = :'history_date'::date;
 
--- --- навыки ---
+
 INSERT INTO task_required_skills (task_id, skill_id)
 SELECT t.id, s.id
 FROM tasks t
@@ -247,7 +247,7 @@ JOIN skills s ON s.name = v.skill_name
 WHERE e.start_date::date = :'history_date'::date
   AND e.title LIKE '%(15.05)';
 
--- --- зависимости ---
+
 INSERT INTO task_dependencies (task_id, depends_on_task_id)
 SELECT child.id, parent.id
 FROM events e
@@ -273,7 +273,7 @@ WHERE e.start_date::date = :'history_date'::date
        AND child.title  = 'Уборка территории после пикника')
   );
 
--- --- назначения (волонтёры с подходящим навыком, без пересечений в этот день) ---
+
 DO $$
 DECLARE
     r_task RECORD;
@@ -291,7 +291,7 @@ BEGIN
         SELECT u.id
         INTO v_user_id
         FROM users u
-        WHERE u.username ~ '^volonter[0-9]{3}$'
+        WHERE u.username ~ '^participant[0-9]{3}$'
           AND EXISTS (
               SELECT 1
               FROM user_skills us
@@ -324,7 +324,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- --- бронирования ресурсов ---
+
 INSERT INTO resource_bookings (task_id, resource_id, status, reserved_from, reserved_to)
 SELECT
     t.id,
@@ -368,7 +368,7 @@ WHERE NOT EXISTS (
       AND rb2.task_id <> t.id
 );
 
--- --- инциденты ---
+
 INSERT INTO incidents (
     description,
     severity,
@@ -397,7 +397,7 @@ FROM (VALUES
         'Майский фестиваль в Сокольниках (15.05)',
         'Регистрация гостей у входа',
         'INV-2026-058',
-        'volonter012',
+        'participant012',
         'Планшет регистрации завис на синхронизации списка гостей.',
         'MEDIUM',
         'RESOLVED',
@@ -409,7 +409,7 @@ FROM (VALUES
         'Майский фестиваль в Сокольниках (15.05)',
         'Дежурство у главной сцены',
         NULL,
-        'volonter034',
+        'participant034',
         'Скопление гостей у барьера перед вечерним блоком.',
         'LOW',
         'RESOLVED',
@@ -421,7 +421,7 @@ FROM (VALUES
         'Арт-двор на Кузнецком мосту (15.05)',
         'Проведение мастер-классов',
         NULL,
-        'volonter045',
+        'participant045',
         'Нехватка стульев в зоне мастер-класса.',
         'LOW',
         'RESOLVED',
@@ -433,7 +433,7 @@ FROM (VALUES
         'Семейный пикник «Зелёная аллея» (15.05)',
         'Барбекю-зона и раздача напитков',
         'INV-2026-025',
-        'volonter067',
+        'participant067',
         'Закончился уголь для мангалов раньше графика.',
         'MEDIUM',
         'RESOLVED',
@@ -445,7 +445,7 @@ FROM (VALUES
         'Семейный пикник «Зелёная аллея» (15.05)',
         'Детская анимационная зона',
         NULL,
-        'volonter028',
+        'participant028',
         'Аниматор задержался на 25 минут из-за пробок.',
         'LOW',
         'RESOLVED',
@@ -475,7 +475,7 @@ JOIN users u ON u.username = v.reporter_username;
 
 COMMIT;
 
--- --- сводка ---
+
 SELECT e.id, e.title, e.status, e.start_date::date AS day,
        COUNT(t.id) AS tasks,
        COUNT(*) FILTER (WHERE t.status = 'DONE') AS tasks_done

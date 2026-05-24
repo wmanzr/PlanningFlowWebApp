@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,6 +38,19 @@ function dedupeSkillTiers(rows: SkillRowDraft[]) {
         map.set(row.skillId, row.tier);
     }
     return [...map.entries()].map(([skillId, tier]) => ({ skillId, tier }));
+}
+function skillDraftsEqual(a: SkillRowDraft[], b: SkillRowDraft[]): boolean {
+    const da = dedupeSkillTiers(a);
+    const db = dedupeSkillTiers(b);
+    if (da.length !== db.length)
+        return false;
+    const bySkill = (x: typeof da) => [...x].sort((p, q) => Number(p.skillId) - Number(q.skillId));
+    const sa = bySkill(da);
+    const sb = bySkill(db);
+    return sa.every((row, i) => {
+        const other = sb[i];
+        return other !== undefined && row.skillId === other.skillId && row.tier === other.tier;
+    });
 }
 function validateSkillDraft(rows: SkillRowDraft[]): Record<number, {
     skill?: string;
@@ -82,10 +95,21 @@ export const ProfilePage = () => {
         setSkillDraft(next);
         setSkillRowErrors({});
     }, []);
-    const { register, reset, trigger, getValues, formState } = useForm<ProfileValues>({
+    const { register, reset, trigger, getValues, formState: { errors: formErrors, isDirty: profileDirty }, } = useForm<ProfileValues>({
         defaultValues: { fullName: '' },
         resolver: zodResolver(profileSchema),
     });
+    const savedSkillDraft = useMemo(() => {
+        if (!currentUser ||
+            !canEditSkills ||
+            skillsState.status !== 'succeeded' ||
+            skillsState.loadedFor !== currentUser.id) {
+            return null;
+        }
+        return mapSkillsToDraft(skillsState.data);
+    }, [canEditSkills, currentUser, skillsState.data, skillsState.loadedFor, skillsState.status]);
+    const skillsDirty = Boolean(canEditSkills && savedSkillDraft !== null && !skillDraftsEqual(skillDraft, savedSkillDraft));
+    const canSave = profileDirty || skillsDirty;
     useEffect(() => {
         if (currentUser) {
             void dispatch(fetchUserByIdThunk(currentUser.id));
@@ -174,7 +198,7 @@ export const ProfilePage = () => {
               <div className="flex flex-col gap-4">
                 <Input label="Email" value={detailedUser.email} disabled readOnly/>
                 <Input label="Дата рождения" value={formatDate(detailedUser.birthDate)} disabled readOnly/>
-                <Input label="Полное имя" error={formState.errors.fullName?.message} {...register('fullName')}/>
+                <Input label="Полное имя" error={formErrors.fullName?.message} {...register('fullName')}/>
               </div>
             </Card>
 
@@ -184,7 +208,7 @@ export const ProfilePage = () => {
           <UserActivityReadOnly user={detailedUser} className="mt-6"/>
 
           <div className="mt-6 flex justify-end">
-            <Button type="button" loading={savingAll} onClick={() => void onSaveAll()}>
+            <Button type="button" disabled={!canSave || savingAll} loading={savingAll} onClick={() => void onSaveAll()}>
               Сохранить
             </Button>
           </div>

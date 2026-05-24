@@ -1,4 +1,4 @@
--- Шаг 6: назначения (категории навыков + приоритет точного skill_id; 2 задачи OPEN для матчинга).
+
 \set demo_date '2026-05-17'
 
 BEGIN;
@@ -54,7 +54,7 @@ BEGIN
             SELECT u.id
             INTO v_user_id
             FROM users u
-            WHERE u.username ~ '^volonter[0-9]{3}$'
+            WHERE u.username ~ '^participant[0-9]{3}$'
               AND EXISTS (
                   SELECT 1
                   FROM user_skills us

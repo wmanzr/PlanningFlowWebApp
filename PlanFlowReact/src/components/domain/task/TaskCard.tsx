@@ -83,7 +83,7 @@ export const TaskCard = ({ task, onClick, className, variant = 'default', titleT
               {task.requiredSkillIds.length}
             </Typography>
           </div>
-          {!hideDependencies ? (<div>
+          {!hideDependencies && task.dependencyIds.length > 0 ? (<div>
             <Typography variant="caption" sx={{ fontWeight: 500 }} color="text.primary">
               Зависимостей
             </Typography>

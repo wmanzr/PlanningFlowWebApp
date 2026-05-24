@@ -31,10 +31,8 @@ const requestUrl = (axiosError: AxiosError): string => {
     }
     return `${base}${url}`;
 };
-const isAuthLoginRequest = (axiosError: AxiosError): boolean =>
-    requestUrl(axiosError).includes(ENDPOINTS.auth.login);
-const isAuthRegisterRequest = (axiosError: AxiosError): boolean =>
-    requestUrl(axiosError).includes(ENDPOINTS.auth.register);
+const isAuthLoginRequest = (axiosError: AxiosError): boolean => requestUrl(axiosError).includes(ENDPOINTS.auth.login);
+const isAuthRegisterRequest = (axiosError: AxiosError): boolean => requestUrl(axiosError).includes(ENDPOINTS.auth.register);
 export const isInvalidCredentialsError = (err: AppApiError): boolean => err.errorCode === ERROR_CODE.INVALID_CREDENTIALS;
 const isApiErrorResponse = (data: unknown): data is ApiErrorResponse => {
     if (typeof data !== 'object' || data === null)
@@ -109,7 +107,7 @@ export const parseApiError = (error: unknown): AppApiError => {
         }
         if (status === 403) {
             return {
-                message: 'Доступ запрещен. Выйдите из аккаунта и войдите снова или обратитесь к администратору.',
+                message: 'Доступ запрещен. Попробуйте выйти и войти снова.',
                 errorCode: ERROR_CODE.FORBIDDEN,
                 httpStatus: status,
                 timestamp: Date.now(),

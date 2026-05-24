@@ -10,11 +10,9 @@ import { selectTheme } from '@/store/slices/ui/selectors';
 import { publicApi, type PublicLandingStatsDto } from '@/api';
 import { Button } from '@/components/ui';
 import { PATHS } from '../paths';
-
 const CONTACT_EMAIL = (import.meta.env.VITE_PUBLIC_CONTACT_EMAIL as string | undefined)?.trim() || 'contact@planflow.app';
 const PROJECT_NOTE = (import.meta.env.VITE_PUBLIC_PROJECT_BYLINE as string | undefined)?.trim() ||
     'PlanningFlow — учёт мероприятий, задач и назначений для команд, которые работают на площадке и в офисе.';
-
 const EMPTY_STATS: PublicLandingStatsDto = {
     totalEventsCount: 0,
     completedEventsCount: 0,
@@ -23,7 +21,6 @@ const EMPTY_STATS: PublicLandingStatsDto = {
     resolvedIncidentsCount: 0,
     acceptedAssignmentsCount: 0,
 };
-
 function useAnimatedCount(target: number, durationMs: number) {
     const [display, setDisplay] = useState(0);
     const fromRef = useRef(0);
@@ -51,9 +48,7 @@ function useAnimatedCount(target: number, durationMs: number) {
     }, [target, durationMs]);
     return display;
 }
-
 const nf = new Intl.NumberFormat('ru-RU');
-
 export const LandingPage = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -113,16 +108,16 @@ export const LandingPage = () => {
       <section className="relative flex min-h-[100dvh] snap-start flex-col">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="animate-landing-drift absolute -left-[20%] top-[10%] h-[min(52vw,420px)] w-[min(52vw,420px)] rounded-full blur-[100px]" style={{
-                background: gradientOrbs.a,
-                opacity: 0.35,
-            }}/>
+            background: gradientOrbs.a,
+            opacity: 0.35,
+        }}/>
           <div className="animate-landing-drift-slow absolute -right-[15%] top-[35%] h-[min(48vw,380px)] w-[min(48vw,380px)] rounded-full blur-[90px]" style={{
-                background: gradientOrbs.b,
-                opacity: 0.28,
-            }}/>
+            background: gradientOrbs.b,
+            opacity: 0.28,
+        }}/>
           <div className="animate-landing-pulse-soft absolute left-[25%] bottom-[5%] h-[min(40vw,320px)] w-[min(55vw,440px)] rounded-full blur-[110px]" style={{
-                background: gradientOrbs.c,
-            }}/>
+            background: gradientOrbs.c,
+        }}/>
         </div>
 
         <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pt-4 md:px-10">
@@ -130,10 +125,10 @@ export const LandingPage = () => {
             PlanningFlow
           </span>
           <IconButton onClick={() => dispatch(uiActions.toggleTheme())} aria-label="Переключить тему" size="small" sx={{
-                border: `1px solid ${mode === 'dark' ? 'rgba(148,161,178,0.35)' : 'rgba(43,44,52,0.12)'}`,
-                backgroundColor: mode === 'dark' ? 'rgba(31,33,40,0.6)' : 'rgba(255,255,254,0.7)',
-                backdropFilter: 'blur(10px)',
-            }}>
+            border: `1px solid ${mode === 'dark' ? 'rgba(148,161,178,0.35)' : 'rgba(43,44,52,0.12)'}`,
+            backgroundColor: mode === 'dark' ? 'rgba(31,33,40,0.6)' : 'rgba(255,255,254,0.7)',
+            backdropFilter: 'blur(10px)',
+        }}>
             {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small"/> : <DarkModeOutlinedIcon fontSize="small"/>}
           </IconButton>
         </header>
@@ -173,8 +168,8 @@ export const LandingPage = () => {
                   {row.label}
                 </p>
                 <p className="mt-1 font-[inherit] text-xl font-semibold tabular-nums tracking-tight text-headline md:text-2xl" style={{
-                    fontFeatureSettings: '"tnum"',
-                }}>
+                fontFeatureSettings: '"tnum"',
+            }}>
                   {statsReady ? nf.format(row.value) : '…'}
                 </p>
               </div>))}
@@ -182,9 +177,9 @@ export const LandingPage = () => {
 
           <div className="mx-auto mt-7 flex max-w-xl flex-col items-center md:mt-9">
             <Button size="lg" className="!min-h-0 !rounded-full !px-8 !py-2 !text-base font-semibold !leading-snug shadow-xl sm:!px-10 sm:!text-lg md:!px-16 md:!py-4 md:!text-xl" style={{
-                background: `linear-gradient(135deg, ${app.button} 0%, ${app.accent} 100%)`,
-                boxShadow: `0 16px 48px ${app.accentSoft}`,
-            }} onClick={() => navigate(PATHS.auth)}>
+            background: `linear-gradient(135deg, ${app.button} 0%, ${app.accent} 100%)`,
+            boxShadow: `0 16px 48px ${app.accentSoft}`,
+        }} onClick={() => navigate(PATHS.auth)}>
               Начать планирование
             </Button>
             <p className="mt-4 text-center text-xs text-paragraph/80 md:text-sm">

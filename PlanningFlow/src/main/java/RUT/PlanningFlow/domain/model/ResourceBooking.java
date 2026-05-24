@@ -1,6 +1,7 @@
 package RUT.PlanningFlow.domain.model;
 
 import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.TaskStatus;
 import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.vo.DateTimeRange;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
@@ -57,7 +58,18 @@ public class ResourceBooking {
         if (status == BookingStatus.CANCELLED) {
             return;
         }
+        assertTaskAllowsBookingCancellation();
         this.status = BookingStatus.CANCELLED;
+    }
+
+    private void assertTaskAllowsBookingCancellation() {
+        final TaskStatus taskStatus = task.getStatus();
+        if (taskStatus == TaskStatus.DONE || taskStatus == TaskStatus.CANCELLED) {
+            throw new DomainException(
+                    "Нельзя отменить бронь для завершённой или отменённой задачи",
+                    "BOOKING_CANCEL_TASK_CLOSED"
+            );
+        }
     }
 
     public void reschedule(final LocalDateTime newReservedFrom, final LocalDateTime newReservedTo) {

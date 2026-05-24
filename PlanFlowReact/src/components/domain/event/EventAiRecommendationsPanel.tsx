@@ -8,6 +8,7 @@ export type EventAiRecommendationsPanelProps = {
     fetchStatus: AsyncStatus;
     fetchError: AppApiError | null;
     report: EventPostMortemAiReportResponseDto | null;
+    pollTimedOut?: boolean;
 };
 const markdownComponents: Components = {
     h1: ({ children }) => (<h1 className="mt-4 first:mt-0 mb-2 text-xl font-bold tracking-tight text-headline">{children}</h1>),
@@ -44,10 +45,11 @@ const markdownComponents: Components = {
       </code>);
     },
 };
-export function EventAiRecommendationsPanel({ fetchStatus, fetchError, report, }: EventAiRecommendationsPanelProps) {
+export function EventAiRecommendationsPanel({ fetchStatus, fetchError, report, pollTimedOut = false, }: EventAiRecommendationsPanelProps) {
     const [expanded, setExpanded] = useState(false);
-    const isPending = fetchStatus === 'pending' ||
-        (fetchStatus === 'succeeded' && report?.status === 'PENDING');
+    const isPending = !pollTimedOut &&
+        (fetchStatus === 'pending' ||
+            (fetchStatus === 'succeeded' && report?.status === 'PENDING'));
     const isFailed = report?.status === 'FAILED';
     const isDone = report?.status === 'COMPLETED';
     const bodyMaxHeight = expanded ? 'max-h-[28rem]' : 'max-h-[12rem]';
@@ -64,6 +66,9 @@ export function EventAiRecommendationsPanel({ fetchStatus, fetchError, report, }
       </div>
       <div className="px-5 py-4">
         {fetchError ? (<ErrorMessage message={fetchError.message}/>) : null}
+        {pollTimedOut && report?.status === 'PENDING' ? (<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
+              Отчёт ещё формируется. Обновите страницу позже.
+            </Typography>) : null}
         {isPending ? (<div className="flex min-h-[140px] flex-col items-center justify-center gap-3 overflow-hidden">
             <Spinner size="lg"/>
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '36rem' }}>

@@ -25,6 +25,7 @@ export const authStorage = {
             }
         }
         catch {
+            void 0;
         }
     },
     clear(): void {

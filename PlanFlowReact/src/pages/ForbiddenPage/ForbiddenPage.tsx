@@ -32,8 +32,7 @@ export const ForbiddenPage = () => {
           Содержимое этой страницы вам недоступно
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, maxWidth: 360 }}>
-          У вашей учетной записи нет прав на просмотр или выполнение этого действия. Если вы
-          считаете, что это ошибка, обратитесь к организатору мероприятия или администратору.
+          У вашей учётной записи нет прав на просмотр или выполнение этого действия.
         </Typography>
         <Box sx={{ mt: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
           <Button type="button" onClick={handleBack}>

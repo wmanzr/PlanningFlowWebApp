@@ -1,6 +1,6 @@
--- Шаг 5: 100 исполнителей (PARTICIPANT) + навыки под демо-задачи 2026-05-17.
--- Пароль у всех как у пользователя part (тот же bcrypt-хеш).
--- ФИО: нечётный volonter — мужчина, чётный — женщина (фамилия в нужном роде).
+
+
+
 \set demo_date '2026-05-17'
 
 BEGIN;
@@ -125,8 +125,8 @@ name_catalog AS (
 new_users AS (
     SELECT
         gs.n,
-        ('volonter' || lpad(gs.n::text, 3, '0')) AS username,
-        ('volonter' || lpad(gs.n::text, 3, '0') || '@planflow.demo') AS email,
+        ('participant' || lpad(gs.n::text, 3, '0')) AS username,
+        ('participant' || lpad(gs.n::text, 3, '0') || '@planflow.demo') AS email,
         nc.full_name,
         (DATE '1992-01-01' + ((gs.n * 97) % 4500)) AS birth_date
     FROM generate_series(3, 102) AS gs(n)
@@ -199,4 +199,4 @@ WHERE r.name = 'PARTICIPANT';
 SELECT COUNT(*) AS user_skill_rows
 FROM user_skills us
 JOIN users u ON u.id = us.user_id
-WHERE u.username LIKE 'volonter%';
+WHERE u.username LIKE 'participant%';

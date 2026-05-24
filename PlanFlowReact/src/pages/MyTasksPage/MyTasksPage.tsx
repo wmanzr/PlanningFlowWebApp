@@ -118,7 +118,7 @@ export const MyTasksPage = () => {
             }
         });
     };
-    return (<PageLayout title="Мои задачи" description="Фильтр по статусу назначения, поиск по названию задачи. Для назначений в ожидании подтверждения используйте кнопки справа от названия.">
+    return (<PageLayout title="Мои задачи">
       <Tabs<AssignmentFilterType> value={filter} onChange={onFilterChange} items={[
             { value: AssignmentFilter.ALL, label: 'Все' },
             { value: AssignmentFilter.CONFIRMED, label: 'Подтвержденные' },
@@ -126,9 +126,9 @@ export const MyTasksPage = () => {
         ]}/>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Input className="md:col-span-2" label="Поиск по названию" placeholder="например, монтаж сцены" value={titleSearch} onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                setTitleSearch(e.target.value);
-                setPage(1);
-            }}/>
+            setTitleSearch(e.target.value);
+            setPage(1);
+        }}/>
       </div>
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       {list.status === 'pending' && items.length === 0 ? <LoadingArea /> : null}

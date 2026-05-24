@@ -9,9 +9,11 @@ import { allocateTaskResourcesThunk, fetchTaskByIdThunk, tasksActions, } from '@
 import { fetchEventByIdThunk } from '@/store/slices/events/eventsSlice';
 import { selectEventById } from '@/store/slices/events/selectors';
 import { selectTaskActionMeta, selectTaskById } from '@/store/slices/tasks/selectors';
+import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { Button, Card, CardHeader, EmptyState, ErrorMessage, LoadingArea, Modal, PageLayout, } from '@/components/ui';
 import { AllocateResourcesForm, BookingRow, } from '@/components/domain/booking';
-import { asEventId, asTaskId, BookingStatus, } from '@/types';
+import { asEventId, asTaskId, BookingStatus, TaskStatus, } from '@/types';
+import { userCanReserveTaskResources } from '@/utils/userCanReserveTaskResources';
 import { PATHS } from '../paths';
 export const TaskBookingsPage = () => {
     const params = useParams<{
@@ -34,6 +36,8 @@ export const TaskBookingsPage = () => {
     const task = useAppSelector(selectTaskById(taskId));
     const taskAction = useAppSelector(selectTaskActionMeta);
     const event = useAppSelector(selectEventById(eventId));
+    const currentUser = useAppSelector(selectCurrentUser);
+    const canReserveResources = userCanReserveTaskResources(currentUser?.roles);
     const [isAllocateOpen, setIsAllocateOpen] = useState(false);
     const [cancellingBookingId, setCancellingBookingId] = useState<number | null>(null);
     const refreshBookings = useCallback(() => {
@@ -51,6 +55,10 @@ export const TaskBookingsPage = () => {
         if (eventId !== undefined)
             void dispatch(fetchEventByIdThunk(eventId));
     }, [dispatch, eventId]);
+    useEffect(() => {
+        if (!canReserveResources)
+            setIsAllocateOpen(false);
+    }, [canReserveResources]);
     if (taskId === undefined || eventId === undefined) {
         return (<PageLayout title="Резервы">
         <ErrorMessage message="Некорректные параметры маршрута"/>
@@ -67,16 +75,19 @@ export const TaskBookingsPage = () => {
           <Link to={PATHS.taskDetail(eventId, taskId)}>
             <Button variant="ghost">К задаче</Button>
           </Link>
-          <Button onClick={() => setIsAllocateOpen(true)}>Зарезервировать</Button>
+          {canReserveResources ? (<Button onClick={() => setIsAllocateOpen(true)}>Зарезервировать</Button>) : null}
         </div>}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(bookingsActions.clearActionError())}/>) : null}
       {taskAction.error ? (<ErrorMessage message={taskAction.error.message} onShown={() => dispatch(tasksActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       {list.status === 'pending' && bookings.length === 0 ? <LoadingArea /> : null}
-      {bookings.length === 0 && list.status !== 'pending' ? (<EmptyState title="Резервов нет" description="Создайте резерв вручную или через автоматический подбор."/>) : null}
+      {bookings.length === 0 && list.status !== 'pending' ? <EmptyState title="Резервов нет"/> : null}
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-5">
-          {bookings.map((booking) => (<BookingRow key={booking.id} booking={booking} {...(booking.status !== BookingStatus.CANCELLED
+          {bookings.map((booking) => (<BookingRow key={booking.id} booking={booking} {...(canReserveResources
+            && booking.status !== BookingStatus.CANCELLED
+            && task?.status !== TaskStatus.DONE
+            && task?.status !== TaskStatus.CANCELLED
             ? {
                 rowHoverCancel: {
                     loading: cancellingBookingId === booking.id && action.status === 'pending',
@@ -101,9 +112,9 @@ export const TaskBookingsPage = () => {
         </div>
       </Card>
 
-      <Modal open={isAllocateOpen} onClose={() => setIsAllocateOpen(false)} title="Резервирование ресурса" size="ml">
-        {task ? (<>
-            <CardHeader title={`Задача «${task.title}»`} subtitle="Бэкенд выберет внутренний или внешний ресурс автоматически."/>
+      <Modal open={canReserveResources && isAllocateOpen} onClose={() => setIsAllocateOpen(false)} title="Резервирование ресурса" size="ml">
+        {task && canReserveResources ? (<>
+            <CardHeader title={`Задача «${task.title}»`}/>
             <AllocateResourcesForm defaultFrom={task.startTime} defaultTo={task.endTime} {...(event
             ? {
                 eventForBookingWindow: {

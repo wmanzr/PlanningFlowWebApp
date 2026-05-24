@@ -1,9 +1,9 @@
--- Демо-мероприятие для теста «Завершить» + post-mortem ИИ:
--- 3 утренние задачи (все end_time < 12:00), статус DONE, назначения, ресурсы, 1 решённый инцидент.
---
--- Запуск:
---   docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---     < PlanningFlow/src/main/resources/db/seed/09_seed_morning_report_demo_event.sql
+
+
+
+
+
+
 
 \set demo_date '2026-05-17'
 \set event_title 'Утренний штаб «Сезон на Манежной»'
@@ -154,7 +154,7 @@ JOIN events e ON e.id = t.event_id
 CROSS JOIN LATERAL (
     SELECT u.id AS user_id
     FROM users u
-    WHERE u.username ~ '^volonter[0-9]{3}$'
+    WHERE u.username ~ '^participant[0-9]{3}$'
       AND EXISTS (
           SELECT 1
           FROM user_skills us
@@ -233,7 +233,7 @@ FROM (VALUES
     (
         'Аккредитация прессы и гостей',
         'INV-2026-040',
-        'volonter019',
+        'participant019',
         'На столе аккредитации не срабатывает сканер QR-кодов — гости стоят в очереди более 5 минут.',
         'MEDIUM',
         'RESOLVED',

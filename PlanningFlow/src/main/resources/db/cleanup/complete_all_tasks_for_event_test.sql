@@ -1,5 +1,5 @@
--- Тест «Завершить мероприятие» + отчёт ИИ: все задачи → DONE, мероприятие → ACTIVE.
--- По умолчанию: «Благотворительный забег «Километр добра»».
+
+
 
 \set event_title 'Благотворительный забег «Километр добра»'
 
@@ -19,7 +19,7 @@ CROSS JOIN LATERAL (
     FROM users u2
     JOIN users_roles ur ON ur.user_entity_id = u2.id
     JOIN roles r ON r.id = ur.roles_id
-    WHERE r.name = 'VOLUNTEER'
+    WHERE r.name = 'PARTICIPANT'
     ORDER BY u2.id
     LIMIT 1
 ) u

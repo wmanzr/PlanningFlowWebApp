@@ -45,7 +45,7 @@ export const EventDashboardPage = () => {
             <Button variant="ghost">К мероприятию</Button>
           </Link>}>
         <Card>
-          <EmptyState title="Сводка недоступна" description="Назначьте хотя бы одного координатора мероприятия — после этого здесь появится статистика по задачам и инцидентам."/>
+          <EmptyState title="Сводка недоступна"/>
         </Card>
       </PageLayout>);
     }

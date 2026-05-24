@@ -118,7 +118,7 @@ export const IncidentDetailPage = () => {
               Закрыть
             </Button>
           </>}>
-        <Textarea label="Резолюция" rows={4} error={resolveForm.formState.errors.resolutionNotes?.message} {...resolveForm.register('resolutionNotes')}/>
+        <Textarea label="Решение" rows={4} error={resolveForm.formState.errors.resolutionNotes?.message} {...resolveForm.register('resolutionNotes')}/>
       </Modal>
     </PageLayout>);
 };

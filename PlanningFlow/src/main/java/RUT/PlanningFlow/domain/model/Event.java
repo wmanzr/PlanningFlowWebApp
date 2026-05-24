@@ -102,7 +102,7 @@ public class Event {
 
         if (hasBlockingTasks) {
             throw new DomainException(
-                    "Нельзя завершить мероприятие, пока все задачи не завершены или не отменены",
+                    "Нельзя завершить мероприятие, пока есть незавершенные задачи",
                     "INCOMPLETE_TASKS_FOR_EVENT_COMPLETION"
             );
         }

@@ -1,24 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import Typography from '@mui/material/Typography';
-import {
-    Button,
-    Input,
-    MapView,
-    MAP_ZOOM_OVERVIEW,
-    Select,
-    Textarea,
-    geoPointFromLatLng,
-    resolveMapViewportCenter,
-    fromDateAndTimeInputs,
-    roundTimeToStep,
-    addMinutes,
-    coerceApiDateTimeToIso,
-    toDateInput,
-    toNaiveLocalIsoFromTimestamp,
-    toTimeInputRoundedToStep,
-    type MapMarker,
-} from '@/components/ui';
+import { Button, Input, MapView, MAP_ZOOM_OVERVIEW, Select, Textarea, geoPointFromLatLng, resolveMapViewportCenter, fromDateAndTimeInputs, roundTimeToStep, addMinutes, coerceApiDateTimeToIso, toDateInput, toNaiveLocalIsoFromTimestamp, toTimeInputRoundedToStep, type MapMarker, } from '@/components/ui';
 import { asIsoDateTime, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, type EventCreateRequest, type EventResponseDto, type EventUpdateRequest, } from '@/types';
 const TITLE_MAX_LENGTH = 200;
 const DESCRIPTION_MAX_LENGTH = 2000;
@@ -114,11 +97,7 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
             },
         ];
     }, [watchedLatitude, watchedLongitude]);
-    const mapViewportCenter = useMemo(
-        () => resolveMapViewportCenter(geoPointFromLatLng(initial?.latitude, initial?.longitude)),
-        [initial?.latitude, initial?.longitude],
-    );
-
+    const mapViewportCenter = useMemo(() => resolveMapViewportCenter(geoPointFromLatLng(initial?.latitude, initial?.longitude)), [initial?.latitude, initial?.longitude]);
     const clearMapLocation = () => {
         setValue('latitude', '', { shouldValidate: true });
         setValue('longitude', '', { shouldValidate: true });
@@ -156,7 +135,8 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
                 if (hadLocation) {
                     update.clearLocation = true;
                 }
-            } else if (lat !== undefined && Number.isFinite(lat) && lng !== undefined && Number.isFinite(lng)) {
+            }
+            else if (lat !== undefined && Number.isFinite(lat) && lng !== undefined && Number.isFinite(lng)) {
                 if (lat >= LATITUDE_MIN && lat <= LATITUDE_MAX && lng >= LONGITUDE_MIN && lng <= LONGITUDE_MAX) {
                     update.latitude = lat;
                     update.longitude = lng;
@@ -209,24 +189,15 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
               Нажмите на карту, чтобы выбрать точку.
             </Typography>
           </div>
-          {mapMarkers.length > 0 ? (
-            <Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
+          {mapMarkers.length > 0 ? (<Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
               Очистить
-            </Button>
-          ) : null}
+            </Button>) : null}
         </div>
-        <MapView
-            height={isEdit ? '200px' : '240px'}
-            center={mapViewportCenter}
-            zoom={MAP_ZOOM_OVERVIEW}
-            viewResetKey={mapViewResetKey}
-            markers={mapMarkers}
-            onMapClick={(point) => {
-                setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
-                setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
-                void trigger(['latitude', 'longitude']);
-            }}
-        />
+        <MapView height={isEdit ? '200px' : '240px'} center={mapViewportCenter} zoom={MAP_ZOOM_OVERVIEW} viewResetKey={mapViewResetKey} markers={mapMarkers} onMapClick={(point) => {
+            setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
+            setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
+            void trigger(['latitude', 'longitude']);
+        }}/>
       </div>
       <div className="flex justify-end gap-2">
         {onCancel ? (<Button type="button" variant="ghost" onClick={onCancel}>

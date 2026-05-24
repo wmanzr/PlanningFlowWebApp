@@ -123,17 +123,17 @@ export const IncidentsPage = () => {
       </PageLayout>);
     }
     if (!event) {
-        return (<PageLayout title="Инциденты мероприятия">
+        return (<PageLayout title="Инциденты">
         {detail.status === 'pending' ? (<LoadingArea />) : (<ErrorMessage message={detail.error?.message ?? 'Мероприятие не найдено'}/>)}
       </PageLayout>);
     }
     if (!hasCoordinator) {
-        return (<PageLayout title="Инциденты мероприятия" description={event.title} actions={<Link to={PATHS.eventDetail(event.id)}>
+        return (<PageLayout title="Инциденты" description={event.title} actions={<Link to={PATHS.eventDetail(event.id)}>
             <Button variant="ghost">К мероприятию</Button>
           </Link>}>
         <Card padded={false}>
           <div className="p-6">
-            <EmptyState title="Планирование недоступно" description="Назначьте хотя бы одного координатора мероприятия — затем можно создавать и просматривать инциденты."/>
+            <EmptyState title="Планирование недоступно"/>
           </div>
         </Card>
       </PageLayout>);
@@ -165,7 +165,7 @@ export const IncidentsPage = () => {
             }
         });
     });
-    return (<PageLayout title="Инциденты мероприятия" actions={<div className="flex gap-2">
+    return (<PageLayout title="Инциденты" description={event.title} actions={<div className="flex gap-2">
           <Link to={PATHS.eventDetail(eventId)}>
             <Button variant="ghost">К мероприятию</Button>
           </Link>
@@ -173,22 +173,24 @@ export const IncidentsPage = () => {
         </div>}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(incidentsActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      {list.status === 'pending' && incidents.length === 0 ? <LoadingArea /> : null}
-      {filteredIncidents.length === 0 && list.status !== 'pending' ? (<EmptyState title={incidents.length === 0 ? 'Инцидентов нет' : 'Ничего не найдено'} description={incidents.length === 0 ? undefined : 'Измените фильтр по статусу.'}/>) : null}
       <Card padded={false}>
-        <div className="flex flex-col gap-3 p-5">
-          <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => {
+        <div className="flex flex-col gap-3 p-4">
+          <div className="max-w-md">
+            <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => {
             setStatusFilter(e.target.value === '' ? '' : (e.target.value as IncidentStatus));
             setPage(1);
         }}/>
+          </div>
+          {list.status === 'pending' && incidents.length === 0 ? <LoadingArea /> : null}
+          {list.status !== 'pending' && filteredIncidents.length === 0 ? (<EmptyState title={incidents.length === 0 ? 'Инцидентов нет' : 'Ничего не найдено'} {...(incidents.length > 0 ? { description: 'Измените фильтр по статусу.' } : {})}/>) : null}
           {filteredIncidents.map((incident) => (<IncidentRow key={incident.id} incident={incident} actions={<>
                   {incident.status === IncidentStatus.OPEN ? (<Button size="sm" onClick={() => {
-                    void dispatch(acceptIncidentThunk(incident.id)).then((r) => {
-                        if (acceptIncidentThunk.fulfilled.match(r)) {
-                            void dispatch(fetchIncidentsForEventThunk({ eventId, query: { page, size: INCIDENT_PAGE_SIZE } }));
-                        }
-                    });
-                }} loading={action.status === 'pending'}>
+                        void dispatch(acceptIncidentThunk(incident.id)).then((r) => {
+                            if (acceptIncidentThunk.fulfilled.match(r)) {
+                                void dispatch(fetchIncidentsForEventThunk({ eventId, query: { page, size: INCIDENT_PAGE_SIZE } }));
+                            }
+                        });
+                    }} loading={action.status === 'pending'}>
                       Принять
                     </Button>) : null}
                   {incident.status !== IncidentStatus.RESOLVED ? (<Button size="sm" variant="ghost" onClick={() => setResolveTarget(incident)}>
@@ -223,7 +225,7 @@ export const IncidentsPage = () => {
               Закрыть инцидент
             </Button>
           </>}>
-        <Textarea label="Резолюция" rows={4} error={resolveForm.formState.errors.resolutionNotes?.message} {...resolveForm.register('resolutionNotes')}/>
+        <Textarea label="Решение" rows={4} error={resolveForm.formState.errors.resolutionNotes?.message} {...resolveForm.register('resolutionNotes')}/>
       </Modal>
     </PageLayout>);
 };

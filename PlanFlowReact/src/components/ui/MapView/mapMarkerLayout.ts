@@ -1,19 +1,15 @@
 import type { MapMarker } from './mapMarker.types';
-
 const LOCATION_BUCKET = 1e-5;
-
 export interface PlacedMapMarker extends MapMarker {
     displayLat: number;
     displayLng: number;
     showLabelOnMap: boolean;
 }
-
 function locationKey(lat: number, lng: number): string {
     const latBucket = Math.round(lat / LOCATION_BUCKET);
     const lngBucket = Math.round(lng / LOCATION_BUCKET);
     return `${latBucket}:${lngBucket}`;
 }
-
 function markerSortWeight(marker: MapMarker): number {
     if (marker.emphasis === 'primary') {
         return 0;
@@ -26,8 +22,10 @@ function markerSortWeight(marker: MapMarker): number {
     }
     return 3;
 }
-
-function ringOffset(index: number, total: number, centerLat: number): { dLat: number; dLng: number } {
+function ringOffset(index: number, total: number, centerLat: number): {
+    dLat: number;
+    dLng: number;
+} {
     if (total <= 1) {
         return { dLat: 0, dLng: 0 };
     }
@@ -39,25 +37,21 @@ function ringOffset(index: number, total: number, centerLat: number): { dLat: nu
         dLng: (radius * Math.cos(angle)) / (cosLat || 1),
     };
 }
-
 export function layoutMapMarkers(markers: MapMarker[]): PlacedMapMarker[] {
     const groups = new Map<string, MapMarker[]>();
-
     for (const marker of markers) {
         const key = locationKey(marker.lat, marker.lng);
         const bucket = groups.get(key);
         if (bucket) {
             bucket.push(marker);
-        } else {
+        }
+        else {
             groups.set(key, [marker]);
         }
     }
-
     const placed: PlacedMapMarker[] = [];
-
     for (const group of groups.values()) {
         const sorted = [...group].sort((a, b) => markerSortWeight(a) - markerSortWeight(b));
-
         if (sorted.length === 1) {
             const only = sorted[0];
             if (!only) {
@@ -72,12 +66,10 @@ export function layoutMapMarkers(markers: MapMarker[]): PlacedMapMarker[] {
             });
             continue;
         }
-
         const anchor = sorted[0];
         if (!anchor) {
             continue;
         }
-
         placed.push({
             ...anchor,
             emphasis: anchor.emphasis ?? 'default',
@@ -85,7 +77,6 @@ export function layoutMapMarkers(markers: MapMarker[]): PlacedMapMarker[] {
             displayLng: anchor.lng,
             showLabelOnMap: false,
         });
-
         const ring = sorted.slice(1);
         ring.forEach((marker, index) => {
             const { dLat, dLng } = ringOffset(index, ring.length, anchor.lat);
@@ -98,6 +89,5 @@ export function layoutMapMarkers(markers: MapMarker[]): PlacedMapMarker[] {
             });
         });
     }
-
     return placed;
 }

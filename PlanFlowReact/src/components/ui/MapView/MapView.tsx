@@ -4,6 +4,8 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
+import { Button } from '../Button';
+import { Spinner } from '../Spinner';
 import { cn } from '../cn';
 import type { GeoPoint } from '@/types';
 import { MAP_DEFAULT_CENTER, MAP_ZOOM_OVERVIEW, MAP_ZOOM_TASK_LABELS_MIN } from './mapConfig';
@@ -11,9 +13,7 @@ import { layoutMapMarkers } from './mapMarkerLayout';
 import { buildMapMarkerHtml, MAP_PRIMARY_PIN_COLOR, resolveMapMarkerColor } from './mapMarkerHtml';
 import type { MapMarker, MapMarkerKind } from './mapMarker.types';
 import { MapMarkersLegend } from './MapMarkersLegend';
-
 export type { MapMarker, MapMarkerKind };
-
 export interface MapViewProps {
     center?: GeoPoint;
     zoom?: number;
@@ -25,121 +25,165 @@ export interface MapViewProps {
     height?: string;
     className?: string;
 }
-
 interface MapInstance {
     destroy: () => void;
-    setCenter: (lngLat: [number, number]) => void;
+    setCenter: (lngLat: [
+        number,
+        number
+    ]) => void;
     setZoom: (zoom: number) => void;
     getZoom: () => number;
-    on: (event: string, handler: (e?: { lngLat?: [number, number] }) => void) => void;
+    on: (event: string, handler: (e?: {
+        lngLat?: [
+            number,
+            number
+        ];
+    }) => void) => void;
+    off?: (event: string, handler: () => void) => void;
 }
-
 interface HtmlMarkerInstance {
     destroy: () => void;
     on?: (event: string, handler: () => void) => void;
 }
-
 interface MapglApi {
-    Map: new (
-        container: HTMLElement,
-        options: {
-            center: [number, number];
-            zoom: number;
-            key: string;
-        },
-    ) => MapInstance;
-    HtmlMarker: new (
-        map: MapInstance,
-        options: {
-            coordinates: [number, number];
-            html: string;
-        },
-    ) => HtmlMarkerInstance;
+    Map: new (container: HTMLElement, options: {
+        center: [
+            number,
+            number
+        ];
+        zoom: number;
+        key: string;
+    }) => MapInstance;
+    HtmlMarker: new (map: MapInstance, options: {
+        coordinates: [
+            number,
+            number
+        ];
+        html: string;
+    }) => HtmlMarkerInstance;
 }
-
-function toLngLat(point: GeoPoint): [number, number] {
+function toLngLat(point: GeoPoint): [
+    number,
+    number
+] {
     return [point.longitude, point.latitude];
 }
-
-export const MapView = ({
-    center = MAP_DEFAULT_CENTER,
-    zoom = MAP_ZOOM_OVERVIEW,
-    viewResetKey = 0,
-    markers = [],
-    showLegend = false,
-    onMarkerClick,
-    onMapClick,
-    height = '400px',
-    className,
-}: MapViewProps) => {
+const MAP_LOAD_TIMEOUT_MS = 15000;
+const MAP_UNAVAILABLE_MESSAGE = 'Карты сейчас не работают';
+function isBrowserOffline(): boolean {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+type MapLoadStatus = 'loading' | 'ready' | 'failed';
+export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW, viewResetKey = 0, markers = [], showLegend = false, onMarkerClick, onMapClick, height = '400px', className, }: MapViewProps) => {
     const theme = useTheme();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<MapInstance | null>(null);
     const markerRefs = useRef<Map<string, HtmlMarkerInstance>>(new Map());
     const onMapClickRef = useRef(onMapClick);
     const onMarkerClickRef = useRef(onMarkerClick);
-    const [mapReady, setMapReady] = useState(false);
+    const [mapLoadStatus, setMapLoadStatus] = useState<MapLoadStatus>('loading');
     const [mapZoom, setMapZoom] = useState(zoom);
-
+    const [loadAttempt, setLoadAttempt] = useState(0);
     const apiKey = (import.meta.env.VITE_2GIS_API_KEY ?? '').toString().trim();
-
-    const primaryPinColor =
-        theme.app?.button?.startsWith('#') === true ? theme.app.button : MAP_PRIMARY_PIN_COLOR;
-
+    const mapReady = mapLoadStatus === 'ready';
+    const primaryPinColor = theme.app?.button?.startsWith('#') === true ? theme.app.button : MAP_PRIMARY_PIN_COLOR;
     const placedMarkers = useMemo(() => layoutMapMarkers(markers), [markers]);
     const legendVisible = showLegend && markers.length > 0;
-
     onMapClickRef.current = onMapClick;
     onMarkerClickRef.current = onMarkerClick;
-
     useEffect(() => {
         if (!apiKey || !containerRef.current) {
             return undefined;
         }
-
         let disposed = false;
-
-        void load().then((api) => {
-            if (disposed || !containerRef.current) {
-                return;
-            }
-
-            const mapglApi = api as unknown as MapglApi;
-            const map = new mapglApi.Map(containerRef.current, {
-                center: toLngLat(center),
-                zoom,
-                key: apiKey,
-            });
-
-            map.on('click', (e) => {
-                if (!e?.lngLat) {
-                    return;
-                }
-                onMapClickRef.current?.({
-                    latitude: e.lngLat[1],
-                    longitude: e.lngLat[0],
-                });
-            });
-
-            const syncZoom = () => setMapZoom(map.getZoom());
-            map.on('zoom', syncZoom);
-            map.on('zoomend', syncZoom);
-            syncZoom();
-
-            mapRef.current = map;
-            setMapReady(true);
-        });
-
-        return () => {
-            disposed = true;
-            setMapReady(false);
+        let readyMarked = false;
+        setMapLoadStatus('loading');
+        const teardownMap = () => {
             markerRefs.current.forEach((marker) => marker.destroy());
             markerRefs.current.clear();
             mapRef.current?.destroy();
             mapRef.current = null;
         };
-    }, [apiKey]);
-
+        const fail = () => {
+            if (disposed) {
+                return;
+            }
+            readyMarked = false;
+            window.clearTimeout(timeoutId);
+            teardownMap();
+            setMapLoadStatus('failed');
+        };
+        const markReady = () => {
+            if (disposed || readyMarked) {
+                return;
+            }
+            readyMarked = true;
+            window.clearTimeout(timeoutId);
+            setMapLoadStatus('ready');
+        };
+        if (isBrowserOffline()) {
+            fail();
+            return () => {
+                disposed = true;
+            };
+        }
+        const timeoutId = window.setTimeout(fail, MAP_LOAD_TIMEOUT_MS);
+        const onOffline = () => {
+            fail();
+        };
+        window.addEventListener('offline', onOffline);
+        void load()
+            .then((api) => {
+            if (disposed || !containerRef.current || isBrowserOffline()) {
+                if (!disposed && isBrowserOffline()) {
+                    fail();
+                }
+                return;
+            }
+            try {
+                const mapglApi = api as unknown as MapglApi;
+                const map = new mapglApi.Map(containerRef.current, {
+                    center: toLngLat(center),
+                    zoom,
+                    key: apiKey,
+                });
+                map.on('click', (e) => {
+                    if (!e?.lngLat) {
+                        return;
+                    }
+                    onMapClickRef.current?.({
+                        latitude: e.lngLat[1],
+                        longitude: e.lngLat[0],
+                    });
+                });
+                const syncZoom = () => setMapZoom(map.getZoom());
+                map.on('zoom', syncZoom);
+                map.on('zoomend', syncZoom);
+                syncZoom();
+                mapRef.current = map;
+                const onStyleLoad = () => {
+                    markReady();
+                };
+                map.on('styleload', onStyleLoad);
+            }
+            catch {
+                fail();
+            }
+        })
+            .catch(fail);
+        return () => {
+            disposed = true;
+            window.removeEventListener('offline', onOffline);
+            window.clearTimeout(timeoutId);
+            readyMarked = false;
+            setMapLoadStatus('loading');
+            teardownMap();
+        };
+    }, [apiKey, loadAttempt]);
+    const retryMapLoad = () => {
+        setMapLoadStatus('loading');
+        setLoadAttempt((n) => n + 1);
+    };
     useEffect(() => {
         if (!mapReady || !mapRef.current) {
             return;
@@ -148,36 +192,24 @@ export const MapView = ({
         mapRef.current.setZoom(zoom);
         setMapZoom(mapRef.current.getZoom());
     }, [viewResetKey, mapReady, center, zoom]);
-
     useEffect(() => {
         if (!mapReady || !mapRef.current || !apiKey) {
             return;
         }
-
         void load().then((api) => {
             const map = mapRef.current;
             if (!map) {
                 return;
             }
-
             const mapglApi = api as unknown as MapglApi;
             markerRefs.current.forEach((marker) => marker.destroy());
             markerRefs.current.clear();
-
             placedMarkers.forEach((marker) => {
                 const emphasis = marker.emphasis ?? 'default';
                 const color = resolveMapMarkerColor(marker.kind);
-                const showLabelOnMap =
-                    marker.showLabelOnMap &&
+                const showLabelOnMap = marker.showLabelOnMap &&
                     (marker.kind !== 'task' || mapZoom >= MAP_ZOOM_TASK_LABELS_MIN);
-                const html = buildMapMarkerHtml(
-                    marker.kind,
-                    color,
-                    marker.label,
-                    showLabelOnMap,
-                    emphasis,
-                    primaryPinColor,
-                );
+                const html = buildMapMarkerHtml(marker.kind, color, marker.label, showLabelOnMap, emphasis, primaryPinColor);
                 const created = new mapglApi.HtmlMarker(map, {
                     coordinates: [marker.displayLng, marker.displayLat],
                     html,
@@ -189,49 +221,65 @@ export const MapView = ({
             });
         });
     }, [apiKey, mapReady, placedMarkers, primaryPinColor, mapZoom]);
-
     if (!apiKey) {
-        return (
-            <Paper
-                variant="outlined"
-                className={cn(className)}
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: 3,
-                    textAlign: 'center',
-                    borderStyle: 'dashed',
-                    height,
-                }}
-            >
+        return (<Paper variant="outlined" className={cn(className)} sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 3,
+                textAlign: 'center',
+                borderStyle: 'dashed',
+                height,
+            }}>
                 <Typography variant="body2" sx={{ fontWeight: 500 }} color="text.primary">
                     Карта не настроена
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
                     Укажите <code>VITE_2GIS_API_KEY</code> в <code>.env</code>.
                 </Typography>
-                <MapMarkersLegend markers={markers} className="mt-3 w-full max-w-md text-left" />
-            </Paper>
-        );
+                <MapMarkersLegend markers={markers} className="mt-3 w-full max-w-md text-left"/>
+            </Paper>);
     }
-
-    return (
-        <div className={cn('flex min-w-0 flex-col', className)}>
-            <Paper
-                variant="outlined"
-                sx={{ height, width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}
-            >
-                <Box ref={containerRef} sx={{ position: 'absolute', inset: 0 }} />
+    return (<div className={cn('flex min-w-0 flex-col', className)}>
+            <Paper variant="outlined" sx={{ height, width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                <Box ref={containerRef} sx={{
+            position: 'absolute',
+            inset: 0,
+            visibility: mapLoadStatus === 'ready' ? 'visible' : 'hidden',
+        }}/>
+                {mapLoadStatus === 'loading' ? (<Box sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'action.hover',
+            }} aria-busy>
+                        <Spinner size="lg" label="Загрузка карты"/>
+                    </Box>) : null}
+                {mapLoadStatus === 'failed' ? (<Box sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                bgcolor: 'background.paper',
+                px: 2,
+                textAlign: 'center',
+            }} role="status">
+                        <Typography variant="body2" color="text.secondary">
+                            {MAP_UNAVAILABLE_MESSAGE}
+                        </Typography>
+                        <Button type="button" variant="ghost" size="sm" onClick={retryMapLoad}>
+                            Повторить
+                        </Button>
+                    </Box>) : null}
             </Paper>
-            {legendVisible ? (
-                <MapMarkersLegend
-                    markers={markers}
-                    className="mt-2 rounded-md border border-secondary/40 bg-surface-muted/60 px-3 py-2"
-                />
-            ) : null}
-        </div>
-    );
+            {legendVisible ? (<MapMarkersLegend markers={markers} className="mt-2 rounded-md border border-secondary/40 bg-surface-muted/60 px-3 py-2"/>) : null}
+        </div>);
 };
-

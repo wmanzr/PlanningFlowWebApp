@@ -22,11 +22,12 @@ const formatHours = (minutes: number): string => {
 };
 export interface CandidateRowProps {
     candidate: RankedCandidateResponseDto;
+    workloadWeekdayLabel?: string;
     actions?: ReactNode;
     emphasizeRecommended?: boolean;
     profileTo?: string;
 }
-export const CandidateRow = ({ candidate, actions, emphasizeRecommended = false, profileTo, }: CandidateRowProps) => {
+export const CandidateRow = ({ candidate, workloadWeekdayLabel = 'За день задачи', actions, emphasizeRecommended = false, profileTo, }: CandidateRowProps) => {
     const skills = useAppSelector(selectAllSkills);
     const skillNameById = useMemo(() => new Map(skills.map((s) => [s.id, s.name] as const)), [skills]);
     const nameLine = (<div className="flex flex-wrap items-center gap-2">
@@ -61,7 +62,7 @@ export const CandidateRow = ({ candidate, actions, emphasizeRecommended = false,
             </div>
             <div>
               <Typography variant="caption" sx={{ fontWeight: 500 }} color="text.primary">
-                Сегодня проработано
+                {workloadWeekdayLabel}, проработано
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 {formatHours(candidate.workedTodayMinutes)} / лимит {formatHours(candidate.maxDailyLoadMinutes)}

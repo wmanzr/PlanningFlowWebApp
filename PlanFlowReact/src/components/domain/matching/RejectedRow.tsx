@@ -29,9 +29,10 @@ const formatHours = (minutes: number): string => {
 };
 export interface RejectedRowProps {
     candidate: RejectedCandidateResponseDto;
+    workloadWeekdayLabel?: string;
     profileTo?: string;
 }
-export const RejectedRow = ({ candidate, profileTo }: RejectedRowProps) => {
+export const RejectedRow = ({ candidate, workloadWeekdayLabel = 'За день задачи', profileTo }: RejectedRowProps) => {
     const skills = useAppSelector(selectAllSkills);
     const skillNameById = useMemo(() => new Map(skills.map((s) => [s.id, s.name] as const)), [skills]);
     const nameLine = (<div className="flex flex-wrap items-center gap-2">
@@ -62,7 +63,7 @@ export const RejectedRow = ({ candidate, profileTo }: RejectedRowProps) => {
           </div>
           <div>
             <Typography variant="caption" sx={{ fontWeight: 500 }} color="text.primary">
-              Сегодня проработано
+              {workloadWeekdayLabel}, проработано
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {formatHours(candidate.workedTodayMinutes)} / лимит {formatHours(candidate.maxDailyLoadMinutes)}

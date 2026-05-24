@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { createSkillThunk, deleteSkillThunk, fetchSkillCategoriesThunk, fetchSkillsThunk, skillsActions, } from '@/store/slices/skills/skillsSlice';
 import { selectAllSkills, selectSkillsActionMeta, selectSkillsCategories, selectSkillsListMeta, } from '@/store/slices/skills/selectors';
 import { Badge, Button, Card, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Pagination, Select, } from '@/components/ui';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { UserRole } from '@/types';
 const NAME_MIN_LENGTH = 2;
 const NAME_MAX_LENGTH = 200;
 const CATEGORY_MIN_LENGTH = 2;
@@ -26,6 +28,8 @@ type Values = z.infer<typeof schema>;
 const PAGE_SIZE = 20;
 export const SkillsPage = () => {
     const dispatch = useAppDispatch();
+    const currentUser = useAppSelector(selectCurrentUser);
+    const canManageCatalog = Boolean(currentUser?.roles.includes(UserRole.ADMIN));
     const skills = useAppSelector(selectAllSkills);
     const list = useAppSelector(selectSkillsListMeta);
     const action = useAppSelector(selectSkillsActionMeta);
@@ -78,7 +82,7 @@ export const SkillsPage = () => {
             void dispatch(fetchSkillCategoriesThunk());
         }
     });
-    return (<PageLayout title="Справочник навыков" description="Используется при подборе персонала на задачи." actions={<Button onClick={() => setIsCreateOpen(true)}>Добавить навык</Button>}>
+    return (<PageLayout title="Справочник навыков" description="Используется при подборе персонала на задачи." actions={canManageCatalog ? (<Button onClick={() => setIsCreateOpen(true)}>Добавить навык</Button>) : undefined}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(skillsActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       <div className="grid gap-3 md:grid-cols-2">
@@ -104,22 +108,22 @@ export const SkillsPage = () => {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-base font-semibold text-headline">{skill.name}</h3>
                     </div>
-                    <div className="pointer-events-none flex shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100">
+                    {canManageCatalog ? (<div className="pointer-events-none flex shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100">
                       <Button size="icon" variant="ghost" type="button" title="Удалить навык из справочника" aria-label="Удалить навык из справочника" className="border border-slate-400/80 text-slate-600 hover:border-red-400 hover:bg-red-500/10 hover:text-red-700" onClick={() => {
-                    if (!window.confirm(`Удалить навык «${skill.name}» из справочника? Связи с задачами и профилями будут сняты.`)) {
-                        return;
-                    }
-                    void dispatch(deleteSkillThunk(skill.id)).then((result) => {
-                        if (deleteSkillThunk.fulfilled.match(result)) {
-                            void dispatch(fetchSkillCategoriesThunk());
-                            const q = search.trim();
-                            void dispatch(fetchSkillsThunk({ page, size: PAGE_SIZE, ...(q ? { name: q } : {}) }));
+                        if (!window.confirm(`Удалить навык «${skill.name}» из справочника? Связи с задачами и профилями будут сняты.`)) {
+                            return;
                         }
-                    });
-                }}>
+                        void dispatch(deleteSkillThunk(skill.id)).then((result) => {
+                            if (deleteSkillThunk.fulfilled.match(result)) {
+                                void dispatch(fetchSkillCategoriesThunk());
+                                const q = search.trim();
+                                void dispatch(fetchSkillsThunk({ page, size: PAGE_SIZE, ...(q ? { name: q } : {}) }));
+                            }
+                        });
+                    }}>
                         <DeleteOutlineOutlinedIcon sx={{ fontSize: 22 }}/>
                       </Button>
-                    </div>
+                    </div>) : null}
                   </div>
                 </Card>))}
             </div>
@@ -130,7 +134,7 @@ export const SkillsPage = () => {
         <Pagination page={page} totalPages={list.totalPages} onChange={setPage} disabled={list.status === 'pending'}/>
       </div>
 
-      <Modal open={isCreateOpen} onClose={() => {
+      <Modal open={isCreateOpen && canManageCatalog} onClose={() => {
             setIsCreateOpen(false);
             reset();
         }} title="Новый навык">

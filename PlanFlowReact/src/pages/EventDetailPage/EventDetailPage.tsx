@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -29,6 +29,8 @@ import { decodeAccessClaims, extractRoles } from '@/store/slices/auth/jwt';
 import { PATHS } from '../paths';
 const REASON_MIN_LENGTH = 5;
 const REASON_MAX_LENGTH = 500;
+const POST_MORTEM_POLL_INTERVAL_MS = 5000;
+const POST_MORTEM_POLL_MAX_MS = 2 * 60 * 1000;
 const cancelSchema = z.object({
     reason: z
         .string()
@@ -111,6 +113,8 @@ export const EventDetailPage = () => {
     const incidentsAction = useAppSelector(selectIncidentsActionMeta);
     const dashboard = useAppSelector(selectEventDashboard);
     const postMortem = useAppSelector(selectEventPostMortem);
+    const [postMortemPollTimedOut, setPostMortemPollTimedOut] = useState(false);
+    const postMortemPollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const user = useAppSelector(selectCurrentUser);
     const isPureParticipant = useMemo(() => !!user &&
         user.roles.includes(UserRole.PARTICIPANT) &&
@@ -230,12 +234,66 @@ export const EventDetailPage = () => {
         void dispatch(fetchEventDashboardThunk(eventId));
         void dispatch(fetchIncidentsForEventThunk({ eventId, query: { page: 1, size: 100 } }));
     }, [dispatch, eventId, isPureParticipant, event]);
+    const postMortemReportForEvent = event !== undefined &&
+        postMortem.loadedEventId !== undefined &&
+        Number(postMortem.loadedEventId) === Number(event.id)
+        ? postMortem.data
+        : null;
     useEffect(() => {
-        if (eventId === undefined || !hasCoordinator || !canManageEvent)
-            return;
-        if (!event || event.status !== EventStatus.COMPLETED)
-            return;
-        void dispatch(fetchEventPostMortemAiReportThunk(eventId));
+        setPostMortemPollTimedOut(false);
+    }, [eventId]);
+    useEffect(() => {
+        if (postMortemReportForEvent?.status === 'COMPLETED' || postMortemReportForEvent?.status === 'FAILED') {
+            if (postMortemPollIntervalRef.current !== null) {
+                clearInterval(postMortemPollIntervalRef.current);
+                postMortemPollIntervalRef.current = null;
+            }
+        }
+    }, [postMortemReportForEvent?.status]);
+    useEffect(() => {
+        if (eventId === undefined || !hasCoordinator || !canManageEvent) {
+            return undefined;
+        }
+        if (!event || event.status !== EventStatus.COMPLETED) {
+            return undefined;
+        }
+        let cancelled = false;
+        const startedAt = Date.now();
+        const stopPolling = () => {
+            if (postMortemPollIntervalRef.current !== null) {
+                clearInterval(postMortemPollIntervalRef.current);
+                postMortemPollIntervalRef.current = null;
+            }
+        };
+        const poll = () => {
+            if (cancelled) {
+                return;
+            }
+            void dispatch(fetchEventPostMortemAiReportThunk(eventId));
+        };
+        poll();
+        postMortemPollIntervalRef.current = setInterval(() => {
+            if (cancelled) {
+                return;
+            }
+            if (Date.now() - startedAt >= POST_MORTEM_POLL_MAX_MS) {
+                setPostMortemPollTimedOut(true);
+                stopPolling();
+                return;
+            }
+            poll();
+        }, POST_MORTEM_POLL_INTERVAL_MS);
+        const maxDurationTimerId = window.setTimeout(() => {
+            if (!cancelled) {
+                setPostMortemPollTimedOut(true);
+                stopPolling();
+            }
+        }, POST_MORTEM_POLL_MAX_MS);
+        return () => {
+            cancelled = true;
+            stopPolling();
+            window.clearTimeout(maxDurationTimerId);
+        };
     }, [dispatch, eventId, event?.id, event?.status, hasCoordinator, canManageEvent]);
     useEffect(() => {
         if (!event || event.coordinatorIds.length > 0)
@@ -339,7 +397,6 @@ export const EventDetailPage = () => {
       </PageLayout>);
     }
     const canViewTasksPanel = canManageEvent && hasCoordinator;
-    const canPlanTasks = canMutateLiveEvent && hasCoordinator;
     const handleStatusAction = (actionFn: typeof completeEventThunk) => {
         void dispatch(actionFn(event.id));
     };
@@ -453,7 +510,7 @@ export const EventDetailPage = () => {
           {dashboard.data ? (<EventDashboardWidget data={dashboard.data} variant="embedded"/>) : null}
         </section>) : null}
 
-            <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})} />
+            <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
 
       {hasCoordinator ? (<div className="flex w-full min-w-0 flex-col gap-6">
           <div className="grid w-full min-w-0 gap-6 lg:grid-cols-2 lg:items-start">
@@ -479,9 +536,7 @@ export const EventDetailPage = () => {
                 </Button>) : null}
             </div>
             <div className={SUMMARY_PREVIEW_PANEL_BODY}>
-              {!canViewTasksPanel ? (<EmptyState title="Нет доступа к задачам" description="Задачи доступны организатору, администратору, создателю и координаторам мероприятия."/>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title="Задач нет" description={canPlanTasks
-                    ? 'Создайте первую задачу мероприятия.'
-                    : 'Задачи по этому мероприятию отображаются в режиме просмотра.'}/>) : null}
+              {!canViewTasksPanel ? (<EmptyState title="Нет доступа к задачам"/>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title="Задач нет"/>) : null}
               {canViewTasksPanel ? (<div className="flex flex-col gap-2">
                   {tasksPreview.preview.map((task) => (<div key={task.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();
@@ -527,7 +582,7 @@ export const EventDetailPage = () => {
                 </Button>) : null}
             </div>
             <div className={SUMMARY_PREVIEW_PANEL_BODY}>
-              {incidents.length === 0 && incidentsList.status !== 'pending' ? (<EmptyState title="Инцидентов нет" description="На этом мероприятии пока не зафиксировано инцидентов."/>) : null}
+              {incidents.length === 0 && incidentsList.status !== 'pending' ? (<EmptyState title="Инцидентов нет"/>) : null}
               {incidents.length > 0 ? (<div className="flex flex-col gap-2">
                   {incidentsPreview.preview.map((incident) => (<div key={incident.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();
@@ -550,9 +605,9 @@ export const EventDetailPage = () => {
             </div>
           </Card>
           </div>
-          {canManageEvent && event.status === EventStatus.COMPLETED ? (<EventAiRecommendationsPanel fetchStatus={postMortem.status} fetchError={postMortem.error} report={postMortem.loadedEventId !== undefined && Number(postMortem.loadedEventId) === Number(event.id) ? postMortem.data : null}/>) : null}
+          {canManageEvent && event.status === EventStatus.COMPLETED ? (<EventAiRecommendationsPanel fetchStatus={postMortem.status} fetchError={postMortem.error} report={postMortemReportForEvent} pollTimedOut={postMortemPollTimedOut}/>) : null}
         </div>) : (<Card>
-          <EmptyState title="Планирование недоступно" description="Назначьте хотя бы одного координатора мероприятия (блок «Координаторы» выше). После этого здесь появятся задачи и инциденты — для всех ролей, включая организаторов и администраторов."/>
+          <EmptyState title="Планирование недоступно"/>
         </Card>)}
 
       <Modal open={isCreateIncidentOpen && !eventClosed && hasCoordinator} onClose={() => {
@@ -583,19 +638,14 @@ export const EventDetailPage = () => {
             <Input label="Поиск" value={coordSearch} onChange={(e) => setCoordSearch(e.target.value)} placeholder="По имени или логину"/>
             {showAssignSelfAsCoordinator ? (<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <p className="min-w-0 flex-1 text-xs leading-snug text-paragraph">
-                  {isAdminUser
-                    ? 'Администратор может назначить себя координатором или выбрать пользователя в списке ниже.'
-                    : 'Организатор или создатель мероприятия может назначить себя координатором.'}
+                  Можно назначить себя или выбрать пользователя в списке ниже.
                 </p>
                 <Button size="sm" variant="primary" className="w-full shrink-0 sm:w-auto" disabled={action.status === 'pending'} onClick={() => user && appendCoordinator(user.id)}>
                   Назначить себя координатором
                 </Button>
               </div>) : null}
-            {!showAssignSelfAsCoordinator && isAdminUser ? (<div className="text-xs text-paragraph">
-                Выберите организатора или координатора. Назначить себя нельзя.
-              </div>) : null}
-            {!showAssignSelfAsCoordinator && !isAdminUser ? (<div className="text-xs text-paragraph">
-                Ниже — другие координаторы, которых можно добавить к мероприятию.
+            {!showAssignSelfAsCoordinator ? (<div className="text-xs text-paragraph">
+                Выберите пользователя в списке ниже.
               </div>) : null}
             {usersList.status === 'pending' ? (<div className="text-sm text-paragraph">Загрузка…</div>) : null}
             <div className="grid gap-2">

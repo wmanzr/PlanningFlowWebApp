@@ -1,9 +1,9 @@
--- Заполнение внутреннего склада (INTERNAL): 60 позиций.
--- Схема JPA: resources, discriminator source_type = 'INTERNAL'.
--- Повторный запуск: пропускает уже существующие inventory_number.
---
--- docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---   < PlanningFlow/src/main/resources/db/seed/00_seed_internal_resources.sql
+
+
+
+
+
+
 
 BEGIN;
 

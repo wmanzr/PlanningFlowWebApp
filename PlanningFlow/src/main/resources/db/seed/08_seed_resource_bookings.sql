@@ -1,4 +1,4 @@
--- Шаг 8: бронирования только INTERNAL (operational), интервал = время задачи.
+
 \set demo_date '2026-05-17'
 
 BEGIN;

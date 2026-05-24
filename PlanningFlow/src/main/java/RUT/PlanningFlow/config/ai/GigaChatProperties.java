@@ -12,20 +12,9 @@ public record GigaChatProperties(
         String model,
         double temperature,
         boolean trustAllSsl,
-        long tokenValidMillis
+        long tokenValidMillis,
+        int connectTimeoutMs,
+        int readTimeoutMs,
+        int maxAttempts
 ) {
-    public GigaChatProperties {
-        if (oauthUrl == null || oauthUrl.isBlank()) {
-            oauthUrl = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
-        }
-        if (chatCompletionsUrl == null || chatCompletionsUrl.isBlank()) {
-            chatCompletionsUrl = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
-        }
-        if (model == null || model.isBlank()) {
-            model = "GigaChat";
-        }
-        if (tokenValidMillis <= 0) {
-            tokenValidMillis = 25 * 60 * 1000L;
-        }
-    }
 }

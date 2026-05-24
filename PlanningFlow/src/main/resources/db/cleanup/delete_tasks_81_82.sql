@@ -1,4 +1,4 @@
--- Удаление задач id 81, 82 («проверка 1», «проверка 2»).
+
 BEGIN;
 
 DELETE FROM assignments WHERE task_id IN (81, 82);

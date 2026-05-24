@@ -69,7 +69,7 @@ export const UsersDirectoryPage = () => {
         setRoleFilter(value === '' ? '' : (value as UserRole));
         setPage(1);
     };
-    return (<PageLayout title="Участники" description="Координаторы и исполнители с доступом к системе.">
+    return (<PageLayout title="Участники">
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       <div className="grid gap-3 md:grid-cols-2">
         <Input label="Поиск по ФИО или логину" placeholder="Введите ФИО или логин пользователя" value={search} onChange={(e) => handleSearchChange(e.target.value)}/>
@@ -99,7 +99,7 @@ export const UsersDirectoryPage = () => {
                     </Badge>))}
                 </div>
               </li>);
-          })}
+        })}
         </ul>
       </Card>
       <Pagination page={page} totalPages={list.totalPages} onChange={setPage} disabled={list.status === 'pending'}/>

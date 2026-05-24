@@ -112,7 +112,7 @@ export const EventTasksPage = () => {
           </Link>}>
         <Card padded={false}>
           <div className="p-6">
-            <EmptyState title="Планирование недоступно" description="Назначьте хотя бы одного координатора мероприятия — затем можно создавать и просматривать задачи."/>
+            <EmptyState title="Планирование недоступно"/>
           </div>
         </Card>
       </PageLayout>);
@@ -132,11 +132,7 @@ export const EventTasksPage = () => {
             <Input label="Поиск по названию" placeholder="Введите название задачи" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}/>
             <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value === '' ? '' : (e.target.value as TaskStatus))}/>
           </div>
-          {sortedFilteredTasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title={items.length === 0 ? 'Задач нет' : 'Ничего не найдено'} description={items.length === 0
-                ? canPlanTasks
-                    ? 'Создайте первую задачу для этого мероприятия.'
-                    : 'Задачи по завершенному или отмененному мероприятию доступны только для просмотра.'
-                : 'Измените фильтр по статусу или запрос поиска.'}/>) : null}
+          {sortedFilteredTasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title={items.length === 0 ? 'Задач нет' : 'Ничего не найдено'} {...(items.length === 0 && canPlanTasks ? { description: 'Создайте первую задачу.' } : items.length > 0 ? { description: 'Измените фильтр по статусу или запрос поиска.' } : {})}/>) : null}
           {sortedFilteredTasks.map((task) => (<TaskCard key={task.id} task={task} onClick={(taskId) => navigate(PATHS.taskDetail(event.id, taskId))}/>))}
         </div>
       </Card>

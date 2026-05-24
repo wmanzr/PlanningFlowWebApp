@@ -5,3 +5,4 @@ export { ExecutorMatchingCard, describeMatchingDistance, formatDistanceMeters, f
 export { ExecutorMatchingPicker, type ExecutorMatchingPickerProps } from './ExecutorMatchingPicker';
 export { buildExecutorMatchingLists, type ExecutorMatchingLists, type LeftMatchingListItem, } from './buildExecutorMatchingLists';
 export { useAutoSelectRankedExecutors } from './useAutoSelectRankedExecutors';
+export { formatMatchingWorkloadWeekday } from './formatMatchingWorkloadWeekday';

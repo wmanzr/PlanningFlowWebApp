@@ -100,9 +100,7 @@ export const EventsListPage = () => {
             }));
         });
     };
-    return (<PageLayout title="Мероприятия" description={isCoordinatorOnly
-            ? 'Здесь отображаются мероприятия, на которые вас назначили координатором.'
-            : 'Здесь отображаются ваши мероприятия.'} actions={canCreate ? (<Button onClick={() => {
+    return (<PageLayout title="Мероприятия" actions={canCreate ? (<Button onClick={() => {
                 dispatch(eventsActions.clearActionError());
                 setIsCreateOpen(true);
             }}>
@@ -114,13 +112,7 @@ export const EventsListPage = () => {
       </div>
       {list.status === 'pending' && items.length === 0 ? <LoadingArea /> : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      {list.status !== 'pending' && sortedEvents.length === 0 && !list.error ? (<EmptyState title={items.length === 0
-                ? (isCoordinatorOnly ? 'Нет назначенных мероприятий' : 'Мероприятий нет')
-                : 'Ничего не найдено'} description={items.length === 0
-                ? (isCoordinatorOnly
-                    ? 'Когда вас назначат координатором на мероприятие, оно появится здесь.'
-                    : 'Создайте первое мероприятие или измените параметры поиска.')
-                : 'Измените фильтр по статусу или запрос поиска.'}/>) : null}
+      {list.status !== 'pending' && sortedEvents.length === 0 && !list.error ? (<EmptyState title={items.length === 0 ? 'Мероприятий нет' : 'Ничего не найдено'} {...(items.length > 0 ? { description: 'Измените фильтр по статусу или запрос поиска.' } : isCoordinatorOnly ? {} : { description: 'Создайте мероприятие или измените поиск.' })}/>) : null}
       <div className="grid w-full gap-3">
         {sortedEvents.map((event) => (<EventCard key={event.id} event={event} userNameById={userNameById} {...(currentUser ? { viewerUserId: currentUser.id } : {})} hideCoordinators={isCoordinatorOnly} onClick={(id) => navigate(PATHS.eventDetail(id))}/>))}
       </div>

@@ -1,4 +1,4 @@
--- Шаг 4/9: требуемые навыки (по skills.name из вашей таблицы + title из 03_seed_tasks.sql).
+
 \set demo_date '2026-05-17'
 
 BEGIN;

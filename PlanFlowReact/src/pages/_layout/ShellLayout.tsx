@@ -64,22 +64,16 @@ export const ShellLayout = ({ children }: {
               <IconButton edge="start" onClick={() => setMobileOpen(true)} aria-label="Открыть меню" sx={{ color: 'text.primary' }}>
                 <MenuIcon />
               </IconButton>
-              <NavLink
-                to={brandTo}
-                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 700,
-                    color: 'primary.main',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
+              <NavLink to={brandTo} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{
+                fontWeight: 700,
+                color: 'primary.main',
+                whiteSpace: 'nowrap',
+            }}>
                   PlanFlow
                 </Typography>
               </NavLink>
-              <Box sx={{ flex: 1 }} />
+              <Box sx={{ flex: 1 }}/>
               <IconButton component={NavLink} to={PATHS.profile} aria-label="Профиль" sx={{ color: 'text.primary' }}>
                 <PersonIcon />
               </IconButton>

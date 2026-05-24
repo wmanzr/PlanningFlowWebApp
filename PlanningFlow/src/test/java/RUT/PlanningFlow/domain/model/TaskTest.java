@@ -1,6 +1,8 @@
 package RUT.PlanningFlow.domain.model;
 
 import RUT.PlanningFlow.domain.enums.AssignStatus;
+import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.enums.TaskStatus;
 import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.support.DomainFixtures;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -141,6 +144,27 @@ class TaskTest {
             task.cancel();
 
             assertThat(task.getStatus()).isEqualTo(TaskStatus.CANCELLED);
+        }
+
+        @Test
+        void cancel_cancels_active_bookings() {
+            final User creator = DomainFixtures.user(1);
+            final Event event = DomainFixtures.event(1, creator);
+            final Task task = DomainFixtures.openTask(10, event, creator, T0, T1);
+            final InternalResource resource = new InternalResource(1, "Hall", ResourceType.EQUIPMENT, "INV-9");
+            final ResourceBooking booking = new ResourceBooking(
+                    1,
+                    task,
+                    resource,
+                    BookingStatus.CONFIRMED,
+                    T0.plusMinutes(30),
+                    T0.plusHours(2)
+            );
+
+            task.cancel(List.of(booking));
+
+            assertThat(task.getStatus()).isEqualTo(TaskStatus.CANCELLED);
+            assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
         }
     }
 

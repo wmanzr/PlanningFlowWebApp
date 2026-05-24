@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -125,11 +126,7 @@ public class ManageTaskStatusService implements ManageTaskStatusUseCase {
         PlanningAccessPolicy.assertCanManageTaskAsPlanner(actor, task);
 
         final LocalDateTime now = LocalDateTime.now();
-
-        for (final ResourceBooking booking : resourceBookingRepository.findActiveForTask(taskId)) {
-            booking.cancel();
-            resourceBookingRepository.update(booking);
-        }
+        final List<ResourceBooking> activeBookings = resourceBookingRepository.findActiveForTask(taskId);
 
         for (final Assignment assignment : assignmentRepository.findByTaskId(taskId)) {
             if (assignment.getStatus() == AssignStatus.REJECTED || assignment.getStatus() == AssignStatus.CANCELLED) {
@@ -139,7 +136,13 @@ public class ManageTaskStatusService implements ManageTaskStatusUseCase {
             assignmentRepository.update(assignment);
         }
 
-        task.cancel();
-        return taskRepository.update(task);
+        task.cancel(activeBookings);
+        final Optional<Integer> updated = taskRepository.update(task);
+        if (updated.isPresent()) {
+            for (final ResourceBooking booking : activeBookings) {
+                resourceBookingRepository.update(booking);
+            }
+        }
+        return updated;
     }
 }

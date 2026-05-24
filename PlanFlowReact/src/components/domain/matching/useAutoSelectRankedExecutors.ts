@@ -1,12 +1,6 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import type { MatchTaskResponseDto } from '@/types';
-
-export function useAutoSelectRankedExecutors(
-    matchResult: MatchTaskResponseDto | null,
-    requiredSlots: number,
-    setSelectedExecutorIds: Dispatch<SetStateAction<Set<number>>>,
-    enabled = true,
-): void {
+export function useAutoSelectRankedExecutors(matchResult: MatchTaskResponseDto | null, requiredSlots: number, setSelectedExecutorIds: Dispatch<SetStateAction<Set<number>>>, enabled = true): void {
     useEffect(() => {
         if (!enabled || !matchResult) {
             return;

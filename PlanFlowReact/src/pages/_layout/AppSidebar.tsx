@@ -93,7 +93,7 @@ function buildItems(roles: UserRole[] | undefined): Item[] {
     if (canListUsers) {
         core.push({ to: PATHS.usersDirectory, label: 'Участники', icon: <GroupIcon fontSize="small"/> });
     }
-    if (!organizerOnly && !coordinatorOnly && !participantOnly) {
+    if (isAdmin) {
         core.push({ to: PATHS.skills, label: 'Навыки', icon: <SchoolIcon fontSize="small"/> });
     }
     return core;
@@ -120,11 +120,7 @@ export const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
     return (<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, bgcolor: 'background.paper' }}>
       {isDesktop && (<>
           <Box sx={{ px: 2.5, py: 2.5, borderBottom: 1, borderColor: 'divider' }}>
-            <NavLink
-              to={brandTo}
-              onClick={onNavigate}
-              style={{ textDecoration: 'none', display: 'inline-block', width: 'fit-content' }}
-            >
+            <NavLink to={brandTo} onClick={onNavigate} style={{ textDecoration: 'none', display: 'inline-block', width: 'fit-content' }}>
               <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
                 PlanFlow
               </Typography>

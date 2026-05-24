@@ -49,7 +49,7 @@ export const AuthPage = () => {
       <Box sx={{ mx: 'auto', display: 'flex', width: '100%', maxWidth: 448, flexDirection: 'column', gap: 3, py: 6 }}>
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }} color="text.primary">
-            PlanFlow
+            Вход
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Войдите, чтобы управлять мероприятиями и задачами.

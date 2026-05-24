@@ -7,21 +7,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {
-    Button,
-    Input,
-    MapView,
-    MAP_ZOOM_OVERVIEW,
-    Select,
-    geoPointFromLatLng,
-    resolveMapViewportCenter,
-    coerceApiDateTimeToIso,
-    fromDateAndTimeInputs,
-    toDateInput,
-    toNaiveLocalIsoFromTimestamp,
-    toTimeInputRoundedToStep,
-    type MapMarker,
-} from '@/components/ui';
+import { Button, Input, MapView, MAP_ZOOM_OVERVIEW, Select, geoPointFromLatLng, resolveMapViewportCenter, coerceApiDateTimeToIso, fromDateAndTimeInputs, toDateInput, toNaiveLocalIsoFromTimestamp, toTimeInputRoundedToStep, type MapMarker, } from '@/components/ui';
 import { formatDateTime } from '@/components/ui/formatters';
 import { ExecutorMatchingPicker, useAutoSelectRankedExecutors } from '@/components/domain/matching';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -46,8 +32,7 @@ const MAX_TASK_DURATION_MS = 8 * 60 * 60 * 1000;
 const MATCH_MAX_DAILY_LOAD_MINUTES = 480;
 const MATCH_MIN_TECHNICAL_GAP_MINUTES = 15;
 const TIME_STEP_MINUTES = 30;
-const PARENT_TASK_NONE_MESSAGE =
-    'Все задачи на мероприятии завершаются позже начала текущей задачи';
+const PARENT_TASK_NONE_MESSAGE = 'Все задачи на мероприятии завершаются позже начала текущей задачи';
 const TASK_MATCHING_RADIUS_OPTIONS: {
     value: number;
     label: string;
@@ -277,12 +262,10 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
     }, [skills, selectedSkillIds]);
     const mapMarkers = useMemo<MapMarker[]>(() => {
         const markers: MapMarker[] = [];
-        if (
-            eventEntity?.latitude !== undefined &&
+        if (eventEntity?.latitude !== undefined &&
             eventEntity.longitude !== undefined &&
             Number.isFinite(eventEntity.latitude) &&
-            Number.isFinite(eventEntity.longitude)
-        ) {
+            Number.isFinite(eventEntity.longitude)) {
             markers.push({
                 id: 'event-ref',
                 lat: eventEntity.latitude,
@@ -306,18 +289,13 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
         }
         return markers;
     }, [watchedLatitude, watchedLongitude, eventEntity?.latitude, eventEntity?.longitude, eventEntity?.title]);
-    const mapViewportCenter = useMemo(
-        () => resolveMapViewportCenter(geoPointFromLatLng(eventEntity?.latitude, eventEntity?.longitude)),
-        [eventEntity?.latitude, eventEntity?.longitude],
-    );
-
+    const mapViewportCenter = useMemo(() => resolveMapViewportCenter(geoPointFromLatLng(eventEntity?.latitude, eventEntity?.longitude)), [eventEntity?.latitude, eventEntity?.longitude]);
     const clearMapLocation = () => {
         setValue('latitude', '', { shouldDirty: true });
         setValue('longitude', '', { shouldDirty: true });
         setMapViewResetKey((key) => key + 1);
         void trigger(['latitude', 'longitude']);
     };
-
     useEffect(() => {
         if (!open || !eventEntity || eventMapPrimedRef.current) {
             return;
@@ -675,24 +653,15 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
                   Нажмите на карту, чтобы указать место задачи.
                 </Typography>
               </div>
-              {mapMarkers.length > 0 ? (
-                <Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
+              {mapMarkers.length > 0 ? (<Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
                   Очистить
-                </Button>
-              ) : null}
+                </Button>) : null}
             </div>
-            <MapView
-                height="220px"
-                center={mapViewportCenter}
-                zoom={MAP_ZOOM_OVERVIEW}
-                viewResetKey={mapViewResetKey}
-                markers={mapMarkers}
-                onMapClick={(point) => {
-                    setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
-                    setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
-                    void trigger(['latitude', 'longitude']);
-                }}
-            />
+            <MapView height="220px" center={mapViewportCenter} zoom={MAP_ZOOM_OVERVIEW} viewResetKey={mapViewResetKey} markers={mapMarkers} onMapClick={(point) => {
+                setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
+                setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
+                void trigger(['latitude', 'longitude']);
+            }}/>
             {errors.latitude?.message ? (<p className="mt-2 text-sm text-danger">{errors.latitude.message}</p>) : null}
           </div>
           <div className="flex justify-between gap-2">
@@ -705,61 +674,27 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
           </div>
         </form>) : (<div className="flex min-h-[min(640px,78vh)] flex-col gap-4">
           <div className="flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
-              <Autocomplete
-                disablePortal
-                disabled={!hasParentTaskOptions}
-                forcePopupIcon={hasParentTaskOptions}
-                {...(!hasParentTaskOptions
-                  ? {
-                      inputValue: PARENT_TASK_NONE_MESSAGE,
-                      onInputChange: () => undefined,
-                  }
-                  : {})}
-                options={taskPickerOptions}
-                value={parentTaskValue}
-                onChange={(_, task) => void handleParentTaskChange(task)}
-                getOptionLabel={(t) => formatTaskPickerLabel(t)}
-                filterOptions={filterTaskOptions}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderOption={(props, option) => (<li {...props} key={option.id}>
+              <Autocomplete disablePortal disabled={!hasParentTaskOptions} forcePopupIcon={hasParentTaskOptions} {...(!hasParentTaskOptions
+            ? {
+                inputValue: PARENT_TASK_NONE_MESSAGE,
+                onInputChange: () => undefined,
+            }
+            : {})} options={taskPickerOptions} value={parentTaskValue} onChange={(_, task) => void handleParentTaskChange(task)} getOptionLabel={(t) => formatTaskPickerLabel(t)} filterOptions={filterTaskOptions} isOptionEqualToValue={(a, b) => a.id === b.id} renderOption={(props, option) => (<li {...props} key={option.id}>
                     <div className="flex flex-col py-0.5">
                       <span>{option.title}</span>
                       <Typography variant="caption" color="text.secondary">
                         {formatDateTime(option.startTime)} — {formatDateTime(option.endTime)}
                       </Typography>
                     </div>
-                  </li>)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Первоочередная задача"
-                    placeholder={
-                      hasParentTaskOptions
-                        ? 'Поиск по названию или датам…'
-                        : PARENT_TASK_NONE_MESSAGE
-                    }
-                    size="small"
-                  />
-                )}
-              />
-              {hasParentTaskOptions ? (
-                <Typography variant="caption" color="text.secondary">
+                  </li>)} renderInput={(params) => (<TextField {...params} label="Первоочередная задача" placeholder={hasParentTaskOptions
+                    ? 'Поиск по названию или датам…'
+                    : PARENT_TASK_NONE_MESSAGE} size="small"/>)}/>
+              {hasParentTaskOptions ? (<Typography variant="caption" color="text.secondary">
                   Необязательно: показаны только задачи, которые завершатся до начала этой.
-                </Typography>
-              ) : null}
+                </Typography>) : null}
             </div>
 
-          <ExecutorMatchingPicker
-            matchResult={matchResult}
-            matchStatus={matchStatus}
-            matchError={matchError}
-            requiredSlots={requiredSlots}
-            executors={executors}
-            executorSearch={executorSearch}
-            onExecutorSearchChange={setExecutorSearch}
-            selectedExecutorIds={selectedExecutorIds}
-            onToggleExecutor={toggleExecutorSelection}
-          />
+          <ExecutorMatchingPicker matchResult={matchResult} matchStatus={matchStatus} matchError={matchError} taskStartTime={createdTaskEntity?.startTime} requiredSlots={requiredSlots} executors={executors} executorSearch={executorSearch} onExecutorSearchChange={setExecutorSearch} selectedExecutorIds={selectedExecutorIds} onToggleExecutor={toggleExecutorSelection}/>
           <div className="mt-auto flex flex-wrap justify-between gap-2">
             <Button type="button" variant="ghost" onClick={() => {
                 setStep(0);

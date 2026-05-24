@@ -1,6 +1,5 @@
 import { http } from '../http';
 import { ENDPOINTS } from '../endpoints';
-
 export interface PublicLandingStatsDto {
     totalEventsCount: number;
     completedEventsCount: number;
@@ -9,7 +8,6 @@ export interface PublicLandingStatsDto {
     resolvedIncidentsCount: number;
     acceptedAssignmentsCount: number;
 }
-
 export const publicApi = {
     landingStats: (): Promise<PublicLandingStatsDto> => http
         .get<PublicLandingStatsDto>(ENDPOINTS.public.landingStats)

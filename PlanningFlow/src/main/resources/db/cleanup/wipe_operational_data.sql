@@ -1,9 +1,9 @@
--- Полная очистка операционных данных (мероприятия, задачи, назначения, инциденты…).
--- НЕ удаляет: users, roles, skills, user_skills, resources (склад).
--- После wipe: заново 01–09 seed + при необходимости 00_seed_internal_resources.
---
--- docker exec -i postgres psql -U postgres -d plan_flow -v ON_ERROR_STOP=1 \
---   < PlanningFlow/src/main/resources/db/cleanup/wipe_operational_data.sql
+
+
+
+
+
+
 
 BEGIN;
 

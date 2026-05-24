@@ -1,9 +1,12 @@
 package RUT.PlanningFlow.adapter.out.ai;
 
+import RUT.PlanningFlow.adapter.out.common.OutboundCallRetry;
 import RUT.PlanningFlow.application.port.out.AIPort;
 import RUT.PlanningFlow.config.ai.GigaChatProperties;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,10 +22,10 @@ import java.util.UUID;
 @Component
 public class GigaChatAiAdapter implements AIPort {
 
+    private static final Logger LOG = LoggerFactory.getLogger(GigaChatAiAdapter.class);
     private final GigaChatProperties properties;
     private final Gson gson;
     private final RestTemplate http;
-
     private String accessToken;
     private long accessTokenExpiresAtMillis;
 
@@ -32,7 +35,7 @@ public class GigaChatAiAdapter implements AIPort {
         if (properties.trustAllSsl()) {
             InsecureSsl.applyOnceForJvm();
         }
-        this.http = new RestTemplate();
+        this.http = OutboundCallRetry.createRestTemplate(properties.connectTimeoutMs(), properties.readTimeoutMs());
     }
 
     @Override
@@ -59,21 +62,22 @@ public class GigaChatAiAdapter implements AIPort {
         headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            final String json = gson.toJson(body);
-            final HttpEntity<String> entity = new HttpEntity<>(json, headers);
-            final ResponseEntity<String> raw = http.postForEntity(properties.chatCompletionsUrl(), entity, String.class);
-            final ChatResponseJson response = gson.fromJson(raw.getBody(), ChatResponseJson.class);
-            if (response != null && response.choices != null && !response.choices.isEmpty()) {
-                final ChoiceJson choice = response.choices.get(0);
-                if (choice.message != null && choice.message.content != null) {
-                    return choice.message.content;
-                }
+        final String json = gson.toJson(body);
+        final HttpEntity<String> entity = new HttpEntity<>(json, headers);
+        final ResponseEntity<String> raw = postForEntityWithRetry(
+                properties.chatCompletionsUrl(),
+                entity,
+                String.class,
+                "GigaChat chat/completions"
+        );
+        final ChatResponseJson response = gson.fromJson(raw.getBody(), ChatResponseJson.class);
+        if (response != null && response.choices != null && !response.choices.isEmpty()) {
+            final ChoiceJson choice = response.choices.get(0);
+            if (choice.message != null && choice.message.content != null) {
+                return choice.message.content;
             }
-            return "";
-        } catch (final Exception e) {
-            throw new IllegalStateException("GigaChat chat/completions: " + e.getMessage(), e);
         }
+        return "";
     }
 
     private synchronized void ensureAccessToken() {
@@ -93,18 +97,33 @@ public class GigaChatAiAdapter implements AIPort {
         final MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("scope", "GIGACHAT_API_PERS");
 
-        try {
-            final HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
-            final ResponseEntity<String> raw = http.postForEntity(properties.oauthUrl(), request, String.class);
-            final TokenResponseJson token = gson.fromJson(raw.getBody(), TokenResponseJson.class);
-            if (token == null || token.accessToken == null || token.accessToken.isBlank()) {
-                throw new IllegalStateException("OAuth: пустой access_token");
-            }
-            this.accessToken = token.accessToken;
-            this.accessTokenExpiresAtMillis = System.currentTimeMillis() + properties.tokenValidMillis();
-        } catch (final Exception e) {
-            throw new IllegalStateException("GigaChat OAuth: " + e.getMessage(), e);
+        final HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+        final ResponseEntity<String> raw = postForEntityWithRetry(
+                properties.oauthUrl(),
+                request,
+                String.class,
+                "GigaChat OAuth"
+        );
+        final TokenResponseJson token = gson.fromJson(raw.getBody(), TokenResponseJson.class);
+        if (token == null || token.accessToken == null || token.accessToken.isBlank()) {
+            throw new IllegalStateException("OAuth: пустой access_token");
         }
+        this.accessToken = token.accessToken;
+        this.accessTokenExpiresAtMillis = System.currentTimeMillis() + properties.tokenValidMillis();
+    }
+
+    private <T> ResponseEntity<T> postForEntityWithRetry(
+            final String url,
+            final HttpEntity<?> entity,
+            final Class<T> responseType,
+            final String operation
+    ) {
+        return OutboundCallRetry.executeWithRetry(
+                () -> http.postForEntity(url, entity, responseType),
+                properties.maxAttempts(),
+                operation,
+                LOG
+        );
     }
 
     private static String basicAuthorizationHeader(final String authFromConfig) {

@@ -232,12 +232,13 @@ export const eventsSlice = createSlice({
             state.dashboard.error = action.payload ?? null;
         })
             .addCase(fetchEventPostMortemAiReportThunk.pending, (state, action) => {
-            state.postMortem.status = 'pending';
-            state.postMortem.error = null;
             const requestedId = action.meta.arg;
-            if (state.postMortem.loadedEventId !== null &&
-                Number(state.postMortem.loadedEventId) !== Number(requestedId)) {
+            const isSameEventPoll = state.postMortem.loadedEventId !== null &&
+                Number(state.postMortem.loadedEventId) === Number(requestedId);
+            if (!isSameEventPoll) {
                 state.postMortem.data = null;
+                state.postMortem.status = 'pending';
+                state.postMortem.error = null;
             }
         })
             .addCase(fetchEventPostMortemAiReportThunk.fulfilled, (state, action) => {

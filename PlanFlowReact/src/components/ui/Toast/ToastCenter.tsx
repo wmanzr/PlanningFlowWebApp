@@ -18,7 +18,7 @@ export const ToastCenter = ({ toasts, onBeginDismiss, onDismiss }: ToastCenterPr
             zIndex: 1600,
             pointerEvents: 'none',
             alignItems: 'flex-end',
-            maxWidth: 'min(100vw - 32px, 360px)',
+            maxWidth: 'min(100vw - 32px, 380px)',
             px: 0,
         }}>
       {toasts.map((toast) => (<Toast key={toast.id} toast={toast} onBeginClose={onBeginDismiss} onClose={onDismiss}/>))}

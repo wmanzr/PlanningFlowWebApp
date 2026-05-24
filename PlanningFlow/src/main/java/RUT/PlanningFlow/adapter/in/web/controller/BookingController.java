@@ -5,6 +5,7 @@ import RUT.PlanningFlow.application.dto.resource.ResourceBookingResponseDto;
 import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
 import RUT.PlanningFlow.application.port.in.booking.GetResourceBookingDetailsQuery;
+import RUT.PlanningFlow.application.port.in.booking.ListResourceBookingsForEventQuery;
 import RUT.PlanningFlow.application.port.in.booking.ListResourceBookingsForTaskQuery;
 import RUT.PlanningFlow.application.port.in.booking.ManageResourceBookingStatusUseCase;
 import RUT.PlanningFlow.application.port.in.booking.RescheduleResourceBookingUseCase;
@@ -25,28 +26,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/bookings")
 @Validated
-@Tag(name = "Бронирования", description = "Брони ресурсов по задаче: просмотр, перенос, статусы")
+@Tag(name = "Бронирования", description = "Брони ресурсов: по задаче и по мероприятию, перенос, статусы")
 public class BookingController {
 
     private final GetResourceBookingDetailsQuery getResourceBookingDetailsQuery;
     private final ListResourceBookingsForTaskQuery listResourceBookingsForTaskQuery;
+    private final ListResourceBookingsForEventQuery listResourceBookingsForEventQuery;
     private final ManageResourceBookingStatusUseCase manageResourceBookingStatusUseCase;
     private final RescheduleResourceBookingUseCase rescheduleResourceBookingUseCase;
 
     public BookingController(
             final GetResourceBookingDetailsQuery getResourceBookingDetailsQuery,
             final ListResourceBookingsForTaskQuery listResourceBookingsForTaskQuery,
+            final ListResourceBookingsForEventQuery listResourceBookingsForEventQuery,
             final ManageResourceBookingStatusUseCase manageResourceBookingStatusUseCase,
             final RescheduleResourceBookingUseCase rescheduleResourceBookingUseCase
     ) {
         this.getResourceBookingDetailsQuery = getResourceBookingDetailsQuery;
         this.listResourceBookingsForTaskQuery = listResourceBookingsForTaskQuery;
+        this.listResourceBookingsForEventQuery = listResourceBookingsForEventQuery;
         this.manageResourceBookingStatusUseCase = manageResourceBookingStatusUseCase;
         this.rescheduleResourceBookingUseCase = rescheduleResourceBookingUseCase;
     }
@@ -60,6 +67,30 @@ public class BookingController {
     ) {
         final PageQuery pageQuery = new PageQuery(page, size);
         final PageResult<ResourceBookingResponseDto> result = listResourceBookingsForTaskQuery.execute(taskId, pageQuery);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/for-event/{eventId}")
+    @Operation(summary = "Брони по мероприятию (все задачи)")
+    public ResponseEntity<PageResult<ResourceBookingResponseDto>> listForEvent(
+            @PathVariable final Integer eventId,
+            @RequestParam(defaultValue = "1") @Min(1) final int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(500) final int size,
+            @RequestParam(required = false) final String name,
+            @RequestParam(required = false) final List<BookingStatus> status,
+            @RequestParam(required = false) final ResourceType resourceType
+    ) {
+        final PageQuery pageQuery = new PageQuery(page, size);
+        final Optional<String> nameOpt = Optional.ofNullable(name).map(String::trim).filter(s -> !s.isEmpty());
+        final List<BookingStatus> statuses = status == null || status.isEmpty() ? List.of() : List.copyOf(status);
+        final Optional<ResourceType> typeOpt = Optional.ofNullable(resourceType);
+        final PageResult<ResourceBookingResponseDto> result = listResourceBookingsForEventQuery.execute(
+                eventId,
+                pageQuery,
+                nameOpt,
+                statuses,
+                typeOpt
+        );
         return ResponseEntity.ok(result);
     }
 

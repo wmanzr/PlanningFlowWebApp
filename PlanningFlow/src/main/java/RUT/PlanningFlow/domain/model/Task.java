@@ -260,13 +260,40 @@ public class Task {
     }
 
     public void cancel() {
+        cancel(List.of());
+    }
+
+    public void cancel(final List<ResourceBooking> activeBookings) {
         if (status == TaskStatus.CANCELLED) {
             return;
         }
         if (status == TaskStatus.DONE) {
             throw new DomainException("Нельзя отменить выполненную задачу", "INVALID_TASK_STATE");
         }
+        cancelLinkedBookings(activeBookings);
         this.status = TaskStatus.CANCELLED;
+    }
+
+    private void cancelLinkedBookings(final List<ResourceBooking> activeBookings) {
+        if (activeBookings == null || activeBookings.isEmpty()) {
+            return;
+        }
+        for (final ResourceBooking booking : activeBookings) {
+            if (booking == null) {
+                continue;
+            }
+            DomainAssert.isTrue(
+                    bookingLinksThisTask(booking),
+                    "Бронь должна относиться к этой задаче",
+                    "BOOKING_TASK_MISMATCH"
+            );
+            booking.cancel();
+        }
+    }
+
+    private boolean bookingLinksThisTask(final ResourceBooking booking) {
+        final Task bookedTask = booking.getTask();
+        return bookedTask != null && this.id != null && Objects.equals(bookedTask.getId(), this.id);
     }
 
     

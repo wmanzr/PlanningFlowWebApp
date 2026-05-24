@@ -1,6 +1,7 @@
 package RUT.PlanningFlow;
 
 import RUT.PlanningFlow.config.ai.GigaChatProperties;
+import RUT.PlanningFlow.config.external.ExternalSupplyProperties;
 import RUT.PlanningFlow.config.external.ExternalSupplySimulationProperties;
 import RUT.PlanningFlow.adapter.in.web.security.JwtProperties;
 import org.springframework.boot.SpringApplication;
@@ -13,7 +14,12 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({JwtProperties.class, GigaChatProperties.class, ExternalSupplySimulationProperties.class})
+@EnableConfigurationProperties({
+        JwtProperties.class,
+        GigaChatProperties.class,
+        ExternalSupplyProperties.class,
+        ExternalSupplySimulationProperties.class
+})
 public class PlanningFlowApplication {
 
 	public static void main(String[] args) {

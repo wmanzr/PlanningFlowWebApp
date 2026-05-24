@@ -2,11 +2,13 @@ package RUT.PlanningFlow.domain.model;
 
 import RUT.PlanningFlow.domain.enums.BookingStatus;
 import RUT.PlanningFlow.domain.enums.ResourceType;
+import RUT.PlanningFlow.domain.enums.TaskStatus;
 import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.support.DomainFixtures;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,5 +55,67 @@ class ResourceBookingTest {
         ))
                 .isInstanceOf(DomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "BOOKING_OUT_OF_EVENT_WINDOW");
+    }
+
+    @Test
+    void cancel_rejected_when_task_done() {
+        final User creator = DomainFixtures.user(1);
+        final Event event = DomainFixtures.event(1, creator);
+        final Task task = new Task(
+                10,
+                event,
+                creator,
+                "Done task",
+                TaskStatus.DONE,
+                T0,
+                T1,
+                null,
+                List.of(),
+                List.of()
+        );
+        final InternalResource resource = new InternalResource(1, "Hall", ResourceType.EQUIPMENT, "INV-9");
+        final ResourceBooking booking = new ResourceBooking(
+                1,
+                task,
+                resource,
+                BookingStatus.CONFIRMED,
+                T0.plusMinutes(30),
+                T0.plusHours(2)
+        );
+
+        assertThatThrownBy(booking::cancel)
+                .isInstanceOf(DomainException.class)
+                .hasFieldOrPropertyWithValue("errorCode", "BOOKING_CANCEL_TASK_CLOSED");
+    }
+
+    @Test
+    void cancel_rejected_when_task_cancelled() {
+        final User creator = DomainFixtures.user(1);
+        final Event event = DomainFixtures.event(1, creator);
+        final Task task = new Task(
+                10,
+                event,
+                creator,
+                "Cancelled task",
+                TaskStatus.CANCELLED,
+                T0,
+                T1,
+                null,
+                List.of(),
+                List.of()
+        );
+        final InternalResource resource = new InternalResource(1, "Hall", ResourceType.EQUIPMENT, "INV-9");
+        final ResourceBooking booking = new ResourceBooking(
+                1,
+                task,
+                resource,
+                BookingStatus.CONFIRMED,
+                T0.plusMinutes(30),
+                T0.plusHours(2)
+        );
+
+        assertThatThrownBy(booking::cancel)
+                .isInstanceOf(DomainException.class)
+                .hasFieldOrPropertyWithValue("errorCode", "BOOKING_CANCEL_TASK_CLOSED");
     }
 }

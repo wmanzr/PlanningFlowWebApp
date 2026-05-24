@@ -66,6 +66,9 @@ export function buildMuiTheme(mode: ThemeMode) {
             error: { main: mode === 'light' ? '#e45858' : '#ef4444' },
             warning: { main: p.accentWarm },
             success: { main: mode === 'light' ? '#22c55e' : '#2cb67d' },
+            info: {
+                main: mode === 'light' ? '#0284c7' : '#38bdf8',
+            },
             background: { default: p.bg, paper: p.surface },
             text: { primary: p.headline, secondary: p.paragraph },
             divider: mode === 'light' ? 'rgba(209,209,233,0.6)' : 'rgba(114,117,126,0.6)',

@@ -8,22 +8,8 @@ import Typography from '@mui/material/Typography';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchSkillsThunk } from '@/store/slices/skills/skillsSlice';
 import { selectAllSkills, selectSkillsListMeta } from '@/store/slices/skills/selectors';
-import {
-    Button,
-    Input,
-    MapView,
-    MAP_ZOOM_OVERVIEW,
-    Select,
-    geoPointFromLatLng,
-    resolveMapViewportCenter,
-    coerceApiDateTimeToIso,
-    fromDateAndTimeInputs,
-    toDateInput,
-    toTimeInputRoundedToStep,
-    type MapMarker,
-} from '@/components/ui';
+import { Button, Input, MapView, MAP_ZOOM_OVERVIEW, Select, geoPointFromLatLng, resolveMapViewportCenter, coerceApiDateTimeToIso, fromDateAndTimeInputs, toDateInput, toTimeInputRoundedToStep, type MapMarker, } from '@/components/ui';
 import { asIsoDateTime, asSkillId, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, type EventId, type EventResponseDto, type SkillResponseDto, type TaskCreateRequest, type TaskResponseDto, type TaskUpdateRequest, } from '@/types';
-
 const filterSkills = createFilterOptions<SkillResponseDto>({
     matchFrom: 'any',
     stringify: (option) => `${option.name} ${option.category ?? ''}`.trim(),
@@ -143,10 +129,7 @@ type TaskFormOutput = z.output<typeof schema>;
 export interface TaskFormProps {
     initial?: TaskResponseDto;
     eventId: EventId;
-    eventForScheduleValidation?: Pick<
-        EventResponseDto,
-        'startDate' | 'endDate' | 'latitude' | 'longitude' | 'title'
-    >;
+    eventForScheduleValidation?: Pick<EventResponseDto, 'startDate' | 'endDate' | 'latitude' | 'longitude' | 'title'>;
     submitting?: boolean;
     onSubmit: (payload: TaskCreateRequest | {
         id: TaskResponseDto['id'];
@@ -163,10 +146,7 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
     const timeOptions = useMemo(() => buildTimeOptions(), []);
     const scheduleDefaults = useMemo(() => scheduleDefaultsFromTask(initial), [initial]);
     const locationDefaults = useMemo(() => locationDefaultsFromTask(initial), [initial]);
-    const skillDefaults = useMemo(
-        () => (initial?.requiredSkillIds ?? []).map((id) => Number(id)),
-        [initial?.requiredSkillIds],
-    );
+    const skillDefaults = useMemo(() => (initial?.requiredSkillIds ?? []).map((id) => Number(id)), [initial?.requiredSkillIds]);
     const { register, handleSubmit, reset, setValue, setError, trigger, control, formState: { errors }, } = useForm<TaskFormInput, unknown, TaskFormOutput>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -187,12 +167,10 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
         const markers: MapMarker[] = [];
         const eventLat = eventForScheduleValidation?.latitude;
         const eventLng = eventForScheduleValidation?.longitude;
-        if (
-            eventLat !== undefined &&
+        if (eventLat !== undefined &&
             eventLng !== undefined &&
             Number.isFinite(eventLat) &&
-            Number.isFinite(eventLng)
-        ) {
+            Number.isFinite(eventLng)) {
             markers.push({
                 id: 'event-ref',
                 lat: eventLat,
@@ -222,20 +200,12 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
         eventForScheduleValidation?.longitude,
         eventForScheduleValidation?.title,
     ]);
-    const mapViewportCenter = useMemo(
-        () =>
-            resolveMapViewportCenter(
-                geoPointFromLatLng(initial?.latitude, initial?.longitude),
-                geoPointFromLatLng(eventForScheduleValidation?.latitude, eventForScheduleValidation?.longitude),
-            ),
-        [
-            initial?.latitude,
-            initial?.longitude,
-            eventForScheduleValidation?.latitude,
-            eventForScheduleValidation?.longitude,
-        ],
-    );
-
+    const mapViewportCenter = useMemo(() => resolveMapViewportCenter(geoPointFromLatLng(initial?.latitude, initial?.longitude), geoPointFromLatLng(eventForScheduleValidation?.latitude, eventForScheduleValidation?.longitude)), [
+        initial?.latitude,
+        initial?.longitude,
+        eventForScheduleValidation?.latitude,
+        eventForScheduleValidation?.longitude,
+    ]);
     const clearMapLocation = () => {
         setValue('latitude', '', { shouldDirty: true });
         setValue('longitude', '', { shouldDirty: true });
@@ -247,7 +217,6 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
             void dispatch(fetchSkillsThunk({ page: 1, size: 500 }));
         }
     }, [dispatch, isEdit]);
-
     useEffect(() => {
         const sd = scheduleDefaultsFromTask(initial);
         const loc = locationDefaultsFromTask(initial);
@@ -281,13 +250,13 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
                 newStartTime: startIso,
                 newEndTime: endIso,
             };
-            const hadLocation =
-                typeof initial.latitude === 'number' && typeof initial.longitude === 'number';
+            const hadLocation = typeof initial.latitude === 'number' && typeof initial.longitude === 'number';
             if (data.latitude === undefined && data.longitude === undefined) {
                 if (hadLocation) {
                     update.clearLocation = true;
                 }
-            } else if (data.latitude !== undefined && data.longitude !== undefined) {
+            }
+            else if (data.latitude !== undefined && data.longitude !== undefined) {
                 update.latitude = data.latitude;
                 update.longitude = data.longitude;
             }
@@ -331,51 +300,22 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
         </div>
       </div>
 
-      {isEdit ? (
-        <div className="rounded-lg border border-secondary/50 bg-surface-muted px-3 py-3">
+      {isEdit ? (<div className="rounded-lg border border-secondary/50 bg-surface-muted px-3 py-3">
           <Typography variant="subtitle2" className="mb-2">
             Требуемые навыки
           </Typography>
-          <Autocomplete
-            multiple
-            disableCloseOnSelect
-            disablePortal
-            size="small"
-            options={skills}
-            loading={skillsList.status === 'pending'}
-            disabled={skillsList.status === 'pending' && skills.length === 0}
-            value={selectedSkills}
-            onChange={(_, newValue) => {
-              setValue(
-                'requiredSkillIds',
-                newValue.map((s) => Number(s.id)),
-                { shouldDirty: true },
-              );
-            }}
-            filterOptions={filterSkills}
-            getOptionLabel={(option) => {
-              const cat = option.category?.trim();
-              return cat ? `${option.name} (${cat})` : option.name;
-            }}
-            isOptionEqualToValue={(a, b) => a.id === b.id}
-            slotProps={{
-              popper: { placement: 'bottom-start' },
-              listbox: { sx: { maxHeight: 220 } },
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Поиск навыка…"
-                helperText={
-                  skillsList.status === 'pending' && skills.length === 0
+          <Autocomplete multiple disableCloseOnSelect disablePortal size="small" options={skills} loading={skillsList.status === 'pending'} disabled={skillsList.status === 'pending' && skills.length === 0} value={selectedSkills} onChange={(_, newValue) => {
+                setValue('requiredSkillIds', newValue.map((s) => Number(s.id)), { shouldDirty: true });
+            }} filterOptions={filterSkills} getOptionLabel={(option) => {
+                const cat = option.category?.trim();
+                return cat ? `${option.name} (${cat})` : option.name;
+            }} isOptionEqualToValue={(a, b) => a.id === b.id} slotProps={{
+                popper: { placement: 'bottom-start' },
+                listbox: { sx: { maxHeight: 220 } },
+            }} renderInput={(params) => (<TextField {...params} placeholder="Поиск навыка…" helperText={skillsList.status === 'pending' && skills.length === 0
                     ? 'Загрузка списка…'
-                    : 'Для подбора исполнителей'
-                }
-              />
-            )}
-          />
-        </div>
-      ) : null}
+                    : 'Для подбора исполнителей'}/>)}/>
+        </div>) : null}
 
 
       <div className="rounded-lg border border-secondary/50 bg-surface-muted p-4">
@@ -389,24 +329,15 @@ export const TaskForm = ({ initial, eventId, eventForScheduleValidation, submitt
                 {errors.latitude.message}
               </Typography>) : null}
           </div>
-          {mapMarkers.length > 0 ? (
-            <Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
+          {mapMarkers.length > 0 ? (<Button type="button" size="sm" variant="ghost" onClick={clearMapLocation}>
               Очистить
-            </Button>
-          ) : null}
+            </Button>) : null}
         </div>
-        <MapView
-            height="240px"
-            center={mapViewportCenter}
-            zoom={MAP_ZOOM_OVERVIEW}
-            viewResetKey={mapViewResetKey}
-            markers={mapMarkers}
-            onMapClick={(point) => {
-                setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
-                setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
-                void trigger(['latitude', 'longitude']);
-            }}
-        />
+        <MapView height="240px" center={mapViewportCenter} zoom={MAP_ZOOM_OVERVIEW} viewResetKey={mapViewResetKey} markers={mapMarkers} onMapClick={(point) => {
+            setValue('latitude', String(point.latitude), { shouldDirty: true, shouldTouch: true });
+            setValue('longitude', String(point.longitude), { shouldDirty: true, shouldTouch: true });
+            void trigger(['latitude', 'longitude']);
+        }}/>
       </div>
       <div className="flex justify-end gap-2">
         {onCancel ? (<Button type="button" variant="ghost" onClick={onCancel}>

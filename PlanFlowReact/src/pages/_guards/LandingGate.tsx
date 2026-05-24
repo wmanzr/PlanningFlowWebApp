@@ -4,7 +4,6 @@ import { selectAuthInitialised, selectCurrentUser, selectIsAuthenticated } from 
 import { getPostLoginPath } from '@/utils/postLoginPath';
 import { LoadingArea } from '@/components/ui';
 import { LandingPage } from '../LandingPage/LandingPage';
-
 export const LandingGate = () => {
     const initialised = useAppSelector(selectAuthInitialised);
     const isAuthenticated = useAppSelector(selectIsAuthenticated);

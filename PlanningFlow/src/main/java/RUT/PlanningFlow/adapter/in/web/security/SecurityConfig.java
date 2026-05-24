@@ -70,8 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/incidents/*/accept").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/incidents/*/resolve").hasAnyRole(PLANNER_ROLES)
                         
-                        .requestMatchers(HttpMethod.POST, "/api/v1/skills").hasAnyRole(PLANNER_ROLES)
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/skills/*").hasAnyRole(PLANNER_ROLES)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/skills").hasRole(UserRoles.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/skills/*").hasRole(UserRoles.ADMIN.name())
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/resources/internal")
                         .hasAnyRole(INTERNAL_RESOURCE_CREATE_ROLES)

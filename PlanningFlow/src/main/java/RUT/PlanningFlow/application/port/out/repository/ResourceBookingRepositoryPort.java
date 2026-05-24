@@ -2,6 +2,8 @@ package RUT.PlanningFlow.application.port.out.repository;
 
 import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
+import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.model.ResourceBooking;
 
 import java.util.List;
@@ -16,6 +18,14 @@ public interface ResourceBookingRepositoryPort {
     Optional<Integer> update(ResourceBooking booking);
     List<ResourceBooking> findActiveForTask(Integer taskId);
     PageResult<ResourceBooking> findByTaskId(Integer taskId, PageQuery pageQuery);
+
+    PageResult<ResourceBooking> findForEvent(
+            Integer eventId,
+            PageQuery pageQuery,
+            Optional<String> nameContains,
+            List<BookingStatus> statuses,
+            Optional<ResourceType> resourceType
+    );
 
     long countBookingsForEventsWhereCreatorOrCoordinator(Integer userId);
 

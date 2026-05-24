@@ -21,7 +21,7 @@ export const IncidentRow = ({ incident, actions }: IncidentRowProps) => (<Card>
           {incident.description}
         </Typography>
         {incident.resolutionNotes ? (<Typography variant="caption" color="text.secondary" className="mt-1" sx={{ display: 'block' }}>
-            <strong>Резолюция:</strong> {incident.resolutionNotes}
+            <strong>Решение:</strong> {incident.resolutionNotes}
             {incident.resolvedAt ? ` • ${formatDateTime(incident.resolvedAt)}` : ''}
           </Typography>) : null}
       </div>

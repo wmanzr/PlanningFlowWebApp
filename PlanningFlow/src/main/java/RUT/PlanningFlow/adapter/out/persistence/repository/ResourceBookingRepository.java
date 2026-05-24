@@ -2,6 +2,7 @@ package RUT.PlanningFlow.adapter.out.persistence.repository;
 
 import RUT.PlanningFlow.adapter.out.persistence.entity.ResourceBookingEntity;
 import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,29 @@ public interface ResourceBookingRepository extends BaseRepository<ResourceBookin
     Page<ResourceBookingEntity> findByResource_NameContainingIgnoreCaseOrderByReservedFromAscIdAsc(String searchTerm, Pageable pageable);
     List<ResourceBookingEntity> findByTask_IdAndStatusIn(Integer taskId, List<BookingStatus> statuses);
     Page<ResourceBookingEntity> findByTask_IdOrderByReservedFromAscIdAsc(Integer taskId, Pageable pageable);
+
+    @Query(
+            """
+            SELECT rb FROM ResourceBookingEntity rb
+            JOIN rb.task t
+            JOIN t.event e
+            JOIN rb.resource r
+            WHERE e.id = :eventId
+            AND (:ignoreName = true OR LOWER(r.name) LIKE LOWER(CONCAT('%', :nameNorm, '%')))
+            AND rb.status IN :statuses
+            AND (:ignoreType = true OR r.type = :resourceType)
+            ORDER BY rb.reservedFrom ASC, rb.id ASC
+            """
+    )
+    Page<ResourceBookingEntity> findForEventWithFilters(
+            @Param("eventId") Integer eventId,
+            @Param("ignoreName") boolean ignoreName,
+            @Param("nameNorm") String nameNorm,
+            @Param("statuses") List<BookingStatus> statuses,
+            @Param("ignoreType") boolean ignoreType,
+            @Param("resourceType") ResourceType resourceType,
+            Pageable pageable
+    );
 
     @Query("""
             SELECT DISTINCT rb.resource.id FROM ResourceBookingEntity rb

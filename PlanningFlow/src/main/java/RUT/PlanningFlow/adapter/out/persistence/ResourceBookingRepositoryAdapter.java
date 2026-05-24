@@ -9,6 +9,7 @@ import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
 import RUT.PlanningFlow.application.port.out.repository.ResourceBookingRepositoryPort;
 import RUT.PlanningFlow.domain.enums.BookingStatus;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.model.ExternalResource;
 import RUT.PlanningFlow.domain.model.InternalResource;
 import RUT.PlanningFlow.domain.model.Resource;
@@ -151,6 +152,39 @@ public class ResourceBookingRepositoryAdapter implements ResourceBookingReposito
             items.add(EntityToDomainMapper.toDomain(e));
         }
 
+        return new PageResult<>(items, page.getTotalElements(), page.getTotalPages());
+    }
+
+    @Override
+    public PageResult<ResourceBooking> findForEvent(
+            final Integer eventId,
+            final PageQuery pageQuery,
+            final Optional<String> nameContains,
+            final List<BookingStatus> statuses,
+            final Optional<ResourceType> resourceType
+    ) {
+        if (eventId == null) {
+            return new PageResult<>(List.of(), 0, 0);
+        }
+        final String trimmed = nameContains.map(String::trim).orElse("");
+        final boolean ignoreName = trimmed.isEmpty();
+        final String nameNorm = trimmed;
+        final boolean ignoreType = resourceType.isEmpty();
+        final ResourceType typeArg = resourceType.orElse(ResourceType.EQUIPMENT);
+        final PageRequest pageable = PageRequest.of(pageQuery.zeroBasedPage(), pageQuery.size());
+        final Page<ResourceBookingEntity> page = repository.findForEventWithFilters(
+                eventId,
+                ignoreName,
+                nameNorm,
+                statuses,
+                ignoreType,
+                typeArg,
+                pageable
+        );
+        final List<ResourceBooking> items = new ArrayList<>(page.getContent().size());
+        for (final ResourceBookingEntity e : page.getContent()) {
+            items.add(EntityToDomainMapper.toDomain(e));
+        }
         return new PageResult<>(items, page.getTotalElements(), page.getTotalPages());
     }
 

@@ -9,7 +9,7 @@ import { fetchTaskByIdThunk } from '@/store/slices/tasks/tasksSlice';
 import { assignTaskThunk } from '@/store/slices/tasks/tasksSlice';
 import { selectCurrentUser } from '@/store/slices/auth/selectors';
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorMessage, PageLayout, Tabs, } from '@/components/ui';
-import { CandidateRow, RejectedRow } from '@/components/domain/matching';
+import { CandidateRow, formatMatchingWorkloadWeekday, RejectedRow } from '@/components/domain/matching';
 import { TaskMatchForm } from '@/components/domain/task';
 import { asEventId, asTaskId, type TaskMatchRequest } from '@/types';
 import { isViewerSubject } from '@/utils/isViewerSubject';
@@ -35,6 +35,7 @@ export const TaskMatchingPage = () => {
     const error = useAppSelector(selectMatchingError);
     const task = useAppSelector(selectTaskById(taskId));
     const [tab, setTab] = useState<TabValue>('ranked');
+    const workloadWeekdayLabel = formatMatchingWorkloadWeekday(task?.startTime);
     useEffect(() => {
         if (taskId !== undefined)
             void dispatch(fetchTaskByIdThunk(taskId));
@@ -59,7 +60,7 @@ export const TaskMatchingPage = () => {
         </Link>}>
       {error ? <ErrorMessage message={error.message}/> : null}
       <Card>
-        <CardHeader title="Параметры подбора" subtitle="Алгоритм выполняется на бэкенде."/>
+        <CardHeader title="Параметры подбора" subtitle="Укажите параметры и нажмите «Запустить подбор»."/>
         <TaskMatchForm submitting={status === 'pending'} onSubmit={handleMatch}/>
       </Card>
 
@@ -89,13 +90,13 @@ export const TaskMatchingPage = () => {
           </div>
           <div className="flex flex-col gap-3 p-5">
             {tab === 'ranked' &&
-                (result.ranked.length === 0 ? (<EmptyState title="Подходящих не найдено" description="Попробуйте ослабить ограничения или сменить режим подбора."/>) : (result.ranked.map((candidate) => (<CandidateRow key={candidate.candidateId} candidate={candidate} profileTo={isViewerSubject(currentUser?.id, candidate.candidateId)
+                (result.ranked.length === 0 ? (<EmptyState title="Подходящих не найдено" description="Попробуйте ослабить ограничения или сменить режим подбора."/>) : (result.ranked.map((candidate) => (<CandidateRow key={candidate.candidateId} candidate={candidate} workloadWeekdayLabel={workloadWeekdayLabel} profileTo={isViewerSubject(currentUser?.id, candidate.candidateId)
                         ? PATHS.profile
                         : PATHS.userDetail(candidate.candidateId)} actions={<Button size="sm" onClick={() => handleAssign(candidate.candidateId)}>
                         Назначить
                       </Button>}/>))))}
             {tab === 'rejected' &&
-                (result.rejected.length === 0 ? (<EmptyState title="Никто не отклонен" description="Все кандидаты прошли все проверки."/>) : (result.rejected.map((candidate) => (<RejectedRow key={candidate.candidateId} candidate={candidate} profileTo={isViewerSubject(currentUser?.id, candidate.candidateId)
+                (result.rejected.length === 0 ? (<EmptyState title="Никто не отклонен" description="Все кандидаты прошли все проверки."/>) : (result.rejected.map((candidate) => (<RejectedRow key={candidate.candidateId} candidate={candidate} workloadWeekdayLabel={workloadWeekdayLabel} profileTo={isViewerSubject(currentUser?.id, candidate.candidateId)
                         ? PATHS.profile
                         : PATHS.userDetail(candidate.candidateId)}/>))))}
           </div>

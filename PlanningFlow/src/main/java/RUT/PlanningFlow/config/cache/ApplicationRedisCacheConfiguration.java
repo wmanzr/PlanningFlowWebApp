@@ -79,7 +79,7 @@ public class ApplicationRedisCacheConfiguration {
         final RedisCacheConfiguration skillCategories = defaults.serializeValuesWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(skillCategoriesValues));
 
-        final RedisCacheConfiguration landing = defaults.entryTtl(Duration.ofMinutes(2));
+        final RedisCacheConfiguration landing = defaults.entryTtl(Duration.ofMinutes(20));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(defaults)

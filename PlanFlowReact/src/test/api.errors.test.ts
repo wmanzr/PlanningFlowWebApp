@@ -39,7 +39,7 @@ describe('parseApiError', () => {
         const parsed = parseApiError(error);
         expect(parsed.httpStatus).toBe(403);
         expect(parsed.errorCode).toBe(ERROR_CODE.FORBIDDEN);
-        expect(parsed.message).toContain('Доступ запрещен');
+        expect(parsed.message).toBe('Доступ запрещен');
     });
     it('maps failed login 403 without body to invalid credentials message', () => {
         const error = new AxiosError('Request failed with status code 403', 'ERR_BAD_REQUEST', { url: '/api/v1/auth/login', method: 'post', headers: new AxiosHeaders() }, null, {

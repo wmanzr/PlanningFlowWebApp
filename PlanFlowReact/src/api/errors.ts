@@ -105,9 +105,17 @@ export const parseApiError = (error: unknown): AppApiError => {
                 timestamp: Date.now(),
             };
         }
+        if (isAuthRegisterRequest(axiosError) && status === 403) {
+            return {
+                message: 'Не удалось зарегистрироваться. Проверьте данные и попробуйте снова.',
+                errorCode: ERROR_CODE.FORBIDDEN,
+                httpStatus: status,
+                timestamp: Date.now(),
+            };
+        }
         if (status === 403) {
             return {
-                message: 'Доступ запрещен. Попробуйте выйти и войти снова.',
+                message: 'Доступ запрещен',
                 errorCode: ERROR_CODE.FORBIDDEN,
                 httpStatus: status,
                 timestamp: Date.now(),

@@ -1,6 +1,9 @@
 import type { ChangeEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import BlockOutlined from '@mui/icons-material/BlockOutlined';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Tooltip from '@mui/material/Tooltip';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchTasksForUserThunk } from '@/store/slices/tasks/tasksSlice';
 import { selectTasksListMeta } from '@/store/slices/tasks/selectors';
@@ -12,6 +15,9 @@ import { TaskCard } from '@/components/domain/task';
 import { AssignStatus, AssignmentFilter, asAssignmentId, asEventId, type AssignmentFilter as AssignmentFilterType, type TaskResponseDto, } from '@/types';
 import { PATHS } from '../paths';
 const PAGE_SIZE = 20;
+const MY_TASK_CARD_ACTIONS = 'flex shrink-0 flex-col gap-2 md:flex-row md:items-start md:gap-2 [&_button]:!h-10 [&_button]:!w-10 [&_button]:!min-h-[40px] [&_button]:!min-w-[40px] [&_button]:!max-h-[40px] [&_button]:!max-w-[40px]';
+const MY_TASK_ICON_ACCENT = 'shrink-0 rounded-[10px] border border-highlight/35 bg-surface/90 text-highlight shadow-sm transition-colors hover:border-highlight/55 hover:bg-surface-muted';
+const MY_TASK_ICON_MUTED = 'shrink-0 rounded-[10px] border border-secondary/55 bg-surface/90 text-tertiary shadow-sm transition-colors hover:border-tertiary/45 hover:bg-surface-muted';
 const FILTER_FROM_PARAM = (value: string | null): AssignmentFilterType => {
     if (value === AssignmentFilter.ALL)
         return AssignmentFilter.ALL;
@@ -124,7 +130,7 @@ export const MyTasksPage = () => {
             { value: AssignmentFilter.CONFIRMED, label: 'Подтвержденные' },
             { value: AssignmentFilter.NOT_CONFIRMED, label: 'Не подтвержденные' },
         ]}/>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3 md:grid-cols-2 md:items-start">
         <Input className="md:col-span-2" label="Поиск по названию" placeholder="например, монтаж сцены" value={titleSearch} onChange={(e: ChangeEvent<HTMLInputElement>) => {
             setTitleSearch(e.target.value);
             setPage(1);
@@ -141,13 +147,21 @@ export const MyTasksPage = () => {
                     if (task.eventId !== undefined) {
                         navigate(PATHS.taskDetail(asEventId(task.eventId), taskId));
                     }
-                }} titleTrailing={showActions && va ? (<div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button size="sm" loading={usersAction.status === 'pending'} onClick={() => acceptOne(va.id)}>
-                      Подтвердить
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => openReject(va.id)}>
-                      Отклонить
-                    </Button>
+                }} titleTrailing={showActions && va ? (<div className={MY_TASK_CARD_ACTIONS}>
+                    <Tooltip title="Подтвердить участие" placement="top" enterDelay={400}>
+                      <span className="inline-flex">
+                        <Button size="icon" variant="ghost" className={MY_TASK_ICON_ACCENT} aria-label="Подтвердить участие" loading={usersAction.status === 'pending'} onClick={() => acceptOne(va.id)}>
+                          <CheckCircle sx={{ fontSize: 22, color: 'currentColor' }}/>
+                        </Button>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Отклонить назначение" placement="top" enterDelay={400}>
+                      <span className="inline-flex">
+                        <Button size="icon" variant="ghost" className={MY_TASK_ICON_MUTED} aria-label="Отклонить назначение" onClick={() => openReject(va.id)}>
+                          <BlockOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                        </Button>
+                      </span>
+                    </Tooltip>
                   </div>) : undefined}/>);
         })}
       </div>

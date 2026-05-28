@@ -38,6 +38,7 @@ export const EventTasksPage = () => {
     const hasCoordinator = (event?.coordinatorIds.length ?? 0) > 0;
     const canPlanTasks = canManageEvent && !eventClosed && hasCoordinator;
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [createTaskBodyScroll, setCreateTaskBodyScroll] = useState(true);
     const [taskSearch, setTaskSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
     const [page, setPage] = useState(1);
@@ -112,7 +113,7 @@ export const EventTasksPage = () => {
           </Link>}>
         <Card padded={false}>
           <div className="p-6">
-            <EmptyState title="Планирование недоступно"/>
+            <EmptyState title="Прежде чем начать планирование, назначьте координаторов"/>
           </div>
         </Card>
       </PageLayout>);
@@ -128,7 +129,7 @@ export const EventTasksPage = () => {
       {tasksList.error ? <ErrorMessage message={tasksList.error.message}/> : null}
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-4">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 md:items-start">
             <Input label="Поиск по названию" placeholder="Введите название задачи" value={taskSearch} onChange={(e) => setTaskSearch(e.target.value)}/>
             <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value === '' ? '' : (e.target.value as TaskStatus))}/>
           </div>
@@ -141,13 +142,15 @@ export const EventTasksPage = () => {
         <Pagination page={page} totalPages={tasksList.totalPages} onChange={setPage} disabled={tasksList.status === 'pending'}/>
       </div>
 
-      <Modal open={isCreateOpen && canPlanTasks} onClose={() => {
+      <Modal open={isCreateOpen && canPlanTasks} bodyScroll={createTaskBodyScroll} onClose={() => {
             dispatch(tasksActions.clearActionError());
+            setCreateTaskBodyScroll(true);
             setIsCreateOpen(false);
             refetchList();
         }} title="Новая задача" size="lg">
-        {user && canPlanTasks && isCreateOpen ? (<TaskCreateWizard open eventId={event.id} onClose={() => {
+        {user && canPlanTasks && isCreateOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0)} onClose={() => {
                 dispatch(tasksActions.clearActionError());
+                setCreateTaskBodyScroll(true);
                 setIsCreateOpen(false);
                 refetchList();
             }}/>) : null}

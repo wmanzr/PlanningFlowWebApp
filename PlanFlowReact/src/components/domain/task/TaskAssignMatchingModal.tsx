@@ -195,16 +195,27 @@ export function TaskAssignMatchingModal({ open, onClose, taskId, eventId, initia
         selectedExecutorIds,
         taskId,
     ]);
-    return (<Modal open={open} onClose={onClose} title={phase === 'count' ? 'Сколько человек подобрать?' : 'Назначить на задачу'} size={phase === 'count' ? 'sm' : 'lg'}>
+    const matchingFooter = (<div className="flex w-full flex-wrap justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={handleBackToCountStep}>
+                Назад
+            </Button>
+            <Button type="button" variant="ghost" onClick={onClose}>
+                Отмена
+            </Button>
+            <Button type="button" loading={bulkAssigning} onClick={() => void handleDone()}>
+                Готово
+            </Button>
+        </div>);
+    return (<Modal open={open} onClose={onClose} title={phase === 'count' ? 'Сколько человек подобрать?' : 'Назначить на задачу'} size={phase === 'count' ? 'sm' : 'lg'} bodyScroll={phase === 'count'} footer={phase === 'matching' ? matchingFooter : undefined}>
             <div className={phase === 'matching'
-            ? 'flex min-h-[min(640px,78vh)] flex-col gap-4 overflow-hidden'
+            ? 'flex min-h-[min(560px,68vh)] flex-1 flex-col gap-3 overflow-hidden'
             : 'flex flex-col gap-4'}>
                 {phase === 'count' ? (<>
                         <Typography variant="body2" color="text.secondary">
                             Укажите, сколько исполнителей нужно найти за этот запуск подбора. На следующем шаге вы
                             сможете выбрать людей из списков (как при создании задачи).
                         </Typography>
-                        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                        <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
                             <div className="min-w-[10rem] max-w-xs flex-1">
                                 <Input label="Количество человек" type="number" min={MIN_PEOPLE} max={MAX_PEOPLE} value={String(pickCount)} onChange={(e) => setPickCount(Number(e.target.value))}/>
                             </div>
@@ -243,18 +254,6 @@ export function TaskAssignMatchingModal({ open, onClose, taskId, eventId, initia
                         </div>
 
                         <ExecutorMatchingPicker matchResult={matchResult} matchStatus={matchStatus} matchError={matchError} taskStartTime={task?.startTime} requiredSlots={requiredSlots} executors={executors} executorSearch={executorSearch} onExecutorSearchChange={setExecutorSearch} selectedExecutorIds={selectedExecutorIds} onToggleExecutor={toggleExecutorSelection}/>
-
-                        <div className="mt-auto flex flex-wrap justify-end gap-2 border-t border-secondary/40 pt-3">
-                            <Button type="button" variant="ghost" onClick={handleBackToCountStep}>
-                                Назад
-                            </Button>
-                            <Button type="button" variant="ghost" onClick={onClose}>
-                                Отмена
-                            </Button>
-                            <Button type="button" loading={bulkAssigning} onClick={() => void handleDone()}>
-                                Готово
-                            </Button>
-                        </div>
                     </>) : null}
             </div>
         </Modal>);

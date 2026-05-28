@@ -47,7 +47,7 @@ export const RescheduleForm = ({ booking, submitting, onSubmit, onCancel, }: Res
         });
     });
     return (<form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         <Input label="Начало" type="datetime-local" error={errors.reservedFrom?.message} {...register('reservedFrom')}/>
         <Input label="Завершение" type="datetime-local" error={errors.reservedTo?.message} {...register('reservedTo')}/>
       </div>

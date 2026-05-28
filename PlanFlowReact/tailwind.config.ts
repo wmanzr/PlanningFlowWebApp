@@ -56,11 +56,21 @@ const config: Config = {
           '0%, 100%': { opacity: '0.45' },
           '50%': { opacity: '0.75' },
         },
+        'landing-hero-fade': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'landing-hero-line': {
+          from: { opacity: '0', transform: 'scaleX(0.2)' },
+          to: { opacity: '1', transform: 'scaleX(1)' },
+        },
       },
       animation: {
         'landing-drift': 'landing-drift 22s ease-in-out infinite',
         'landing-drift-slow': 'landing-drift-slow 30s ease-in-out infinite',
         'landing-pulse-soft': 'landing-pulse-soft 8s ease-in-out infinite',
+        'landing-hero-fade': 'landing-hero-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'landing-hero-line': 'landing-hero-line 0.55s cubic-bezier(0.22, 1, 0.36, 1) both',
       },
     },
   },

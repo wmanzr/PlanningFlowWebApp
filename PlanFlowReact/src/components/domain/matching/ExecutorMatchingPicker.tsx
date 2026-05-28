@@ -8,30 +8,13 @@ import { ExecutorMatchingCard } from './ExecutorMatchingCard';
 import { formatMatchingWorkloadWeekday } from './formatMatchingWorkloadWeekday';
 import { MATCHING_REJECTION_LABELS } from './RejectedRow';
 import type { AppApiError, MatchTaskResponseDto, RejectedCandidateResponseDto, SkillId, UserId, UserResponseDto, } from '@/types';
-const MATCHING_LIST_HEIGHT_CLASS = 'h-[min(360px,42vh)] min-h-[280px]';
-const MATCHING_LIST_SCROLL_MAX_CLASS = 'max-h-[min(360px,42vh)]';
-function recommendedListContainerClass(count: number): string {
-    const base = 'flex flex-col gap-2 pr-1';
-    if (count <= 1) {
-        return base;
-    }
-    if (count === 2) {
-        return `${base} max-h-[min(220px,30vh)] overflow-y-auto sm:max-h-[min(360px,42vh)]`;
-    }
-    return `${base} ${MATCHING_LIST_SCROLL_MAX_CLASS} min-h-0 overflow-y-auto lg:h-[min(360px,42vh)] lg:min-h-[280px]`;
-}
 function formatRejectionTooltip(r: RejectedCandidateResponseDto): string {
     const label = MATCHING_REJECTION_LABELS[r.reason];
     const d = r.details?.trim();
     return d ? `${label}: ${d}` : label;
 }
-function MatchingListEmptyState({ compact = false }: {
-    compact?: boolean;
-}) {
-    const sizeClass = compact
-        ? 'h-[min(120px,18vh)] min-h-[88px]'
-        : MATCHING_LIST_HEIGHT_CLASS;
-    return (<div className={`flex ${sizeClass} items-center justify-center rounded-lg border border-dashed border-secondary/50 px-4`}>
+function MatchingListEmptyState() {
+    return (<div className="flex min-h-[8rem] flex-1 items-center justify-center rounded-lg border border-dashed border-secondary/50 px-4">
             <Typography variant="body2" color="text.secondary" className="text-center">
                 Исполнителей нет
             </Typography>
@@ -114,16 +97,16 @@ export function ExecutorMatchingPicker({ matchResult, matchStatus, matchError, t
                 },
             })}/>);
     };
-    return (<div className="flex min-h-0 flex-col gap-4">
-            {matchStatus === 'pending' ? (<Typography variant="body2" color="text.secondary">
+    return (<div className="flex min-h-0 flex-1 flex-col gap-3">
+            {matchStatus === 'pending' ? (<Typography variant="body2" color="text.secondary" className="shrink-0">
                     Выполняется подбор кандидатов…
                 </Typography>) : null}
-            {matchError ? (<Typography variant="body2" color="error">
+            {matchError ? (<Typography variant="body2" color="error" className="shrink-0">
                     {matchError.message}
                 </Typography>) : null}
 
             {matchResult ? (<>
-                    <div className="rounded-lg border border-secondary/45 bg-surface-muted/70 px-3 py-2.5">
+                    <div className="shrink-0 rounded-lg border border-secondary/45 bg-surface-muted/70 px-3 py-2.5">
                         <Typography variant="body2" className="font-semibold text-headline">
                             Выделено: {selectedExecutorIds.size} из {requiredSlots}
                         </Typography>
@@ -132,11 +115,13 @@ export function ExecutorMatchingPicker({ matchResult, matchStatus, matchError, t
                         </Typography>
                     </div>
 
-                    <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-4 lg:min-h-[min(520px,62vh)] lg:grid-cols-2 lg:items-stretch">
-                        <div className="flex min-h-0 min-w-0 flex-col gap-3">
-                            <Typography variant="subtitle2">Все исполнители</Typography>
-                            <TextField size="small" label="Поиск по ФИО" value={executorSearch} onChange={(e) => onExecutorSearchChange(e.target.value)} placeholder="Имя или фамилия"/>
-                            {lists && lists.leftItems.length === 0 && lists.rejectedOrphans.length === 0 ? (<MatchingListEmptyState />) : (<div className={`flex ${MATCHING_LIST_HEIGHT_CLASS} flex-col gap-2 overflow-y-auto pr-1`}>
+                    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div className="flex min-h-0 min-w-0 flex-col gap-2">
+                            <Typography variant="subtitle2" className="shrink-0">
+                                Все исполнители
+                            </Typography>
+                            <TextField className="shrink-0" size="small" label="Поиск по ФИО" value={executorSearch} onChange={(e) => onExecutorSearchChange(e.target.value)} placeholder="Имя или фамилия"/>
+                            {lists && lists.leftItems.length === 0 && lists.rejectedOrphans.length === 0 ? (<MatchingListEmptyState />) : (<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
                                     {lists?.leftItems.map((item) => {
                     if (item.kind === 'overflow-ranked') {
                         const c = item.candidate;
@@ -165,9 +150,11 @@ export function ExecutorMatchingPicker({ matchResult, matchStatus, matchError, t
                                 </div>)}
                         </div>
 
-                        <div className="flex min-h-0 min-w-0 flex-col gap-3 self-start">
-                            <Typography variant="subtitle2">Рекомендованные кандидаты</Typography>
-                            {lists && lists.recommended.length === 0 ? (<MatchingListEmptyState compact/>) : (<div className={recommendedListContainerClass(lists?.recommended.length ?? 0)}>
+                        <div className="flex min-h-0 min-w-0 flex-col gap-2">
+                            <Typography variant="subtitle2" className="shrink-0">
+                                Рекомендованные кандидаты
+                            </Typography>
+                            {lists && lists.recommended.length === 0 ? (<MatchingListEmptyState />) : (<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
                                     {lists?.recommended.map((c) => (<div key={c.candidateId}>
                                             {renderSelectableCard(c.candidateId, c.candidateFullName, c.candidateUsername, c.matchedRequiredSkillIds, c.distanceMeters, c.workedTodayMinutes, c.maxDailyLoadMinutes, <Badge tone="success">#{c.rank}</Badge>)}
                                         </div>))}

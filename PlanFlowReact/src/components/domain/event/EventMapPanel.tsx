@@ -8,7 +8,7 @@ export interface EventMapPanelProps {
 }
 export function EventMapPanel({ markers, center, expandModalTitle = 'Карта мероприятия' }: EventMapPanelProps) {
     const [mapExpanded, setMapExpanded] = useState(false);
-    const mapViewportCenter = useMemo(() => resolveMapViewportCenter(center), [center]);
+    const mapViewportCenter = useMemo(() => resolveMapViewportCenter(center), [center?.latitude, center?.longitude]);
     const markerSummary = markers.length === 0
         ? 'Нет точек с координатами'
         : `На карте: ${markers.length} ${markers.length === 1 ? 'точка' : markers.length < 5 ? 'точки' : 'точек'}`;

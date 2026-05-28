@@ -32,9 +32,9 @@ function buildDefaultDotHtml(kind: MapMarkerKind, color: string, label: string |
     const size = kind === 'event' ? 14 : 12;
     const title = label ? escapeHtml(label) : KIND_LABEL[kind];
     const labelHtml = showLabel && label
-        ? `<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px/1.2 system-ui,sans-serif;color:#1a1a1a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;">${escapeHtml(label)}</span>`
+        ? `<span style="max-width:min(200px,38vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px/1.2 system-ui,sans-serif;color:#1a1a1a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;">${escapeHtml(label)}</span>`
         : '';
-    return `<div title="${title}" style="display:flex;flex-direction:column;align-items:center;gap:3px;transform:translate(-50%,-100%);pointer-events:auto;cursor:default;">
+    return `<div title="${title}" style="display:inline-flex;flex-direction:row;align-items:center;gap:6px;transform:translate(-50%,-100%);pointer-events:auto;cursor:default;">
   <div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.35);flex-shrink:0;"></div>
   ${labelHtml}
 </div>`;

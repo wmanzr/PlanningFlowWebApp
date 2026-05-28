@@ -163,7 +163,7 @@ export const EventForm = ({ initial, onSubmit, onCancel, submitting }: EventForm
       <Input label="Название" {...register('title')}/>
       <Textarea label="Описание" rows={5} {...register('description')}/>
       <div className="rounded-lg border border-secondary/50 bg-surface-muted p-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
           <div className="grid gap-2">
             <Typography variant="subtitle2">Начало</Typography>
             <div className="grid gap-3 sm:grid-cols-2">

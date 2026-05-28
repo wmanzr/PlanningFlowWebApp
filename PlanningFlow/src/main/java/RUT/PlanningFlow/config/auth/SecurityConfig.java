@@ -1,5 +1,6 @@
-package RUT.PlanningFlow.adapter.in.web.security;
+package RUT.PlanningFlow.config.auth;
 
+import RUT.PlanningFlow.adapter.in.web.security.JwtFilter;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,8 +48,6 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
 
-                        .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").authenticated()
-
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/status/**").authenticated()
                         
                         .requestMatchers(HttpMethod.POST, "/api/v1/events/**").hasAnyRole(PLANNER_ROLES)
@@ -60,10 +59,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/tasks/*/assignments/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/matching").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/resources/allocate").hasAnyRole(PLANNER_ROLES)
-                        
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/viewer-context").authenticated()
-                        
+
                         .requestMatchers(HttpMethod.PUT, "/api/v1/bookings/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings/*/status/**").hasAnyRole(PLANNER_ROLES)
 
@@ -75,8 +71,6 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/resources/internal")
                         .hasAnyRole(INTERNAL_RESOURCE_CREATE_ROLES)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/resources/internal/**")
-                        .hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.PUT, "/api/v1/resources/internal/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/resources/internal/**").hasAnyRole(PLANNER_ROLES)
 

@@ -15,8 +15,12 @@ import { fetchTasksForEventThunk, tasksActions } from '@/store/slices/tasks/task
 import { makeSelectTasksByEvent, selectTasksListMeta } from '@/store/slices/tasks/selectors';
 import { selectCurrentUser, selectHasRole } from '@/store/slices/auth/selectors';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import BlockOutlined from '@mui/icons-material/BlockOutlined';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import EditOutlined from '@mui/icons-material/EditOutlined';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { Button, Card, CardHeader, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, SUMMARY_PREVIEW_PANEL_BODY, SUMMARY_PREVIEW_PANEL_HEADER, Textarea, formatDateTime, geoPointFromLatLng, slicePreviewList, type MapMarker, } from '@/components/ui';
+import { Button, Card, CardHeader, EmptyState, ErrorMessage, Input, LoadingArea, Modal, PageLayout, Spinner, SUMMARY_PREVIEW_PANEL_BODY, SUMMARY_PREVIEW_PANEL_HEADER, Textarea, formatDateTime, geoPointFromLatLng, slicePreviewList, type MapMarker, } from '@/components/ui';
 import { SelfOrProfileLink } from '@/components/domain/user/SelfOrProfileLink';
 import { EventDashboardWidget, EventForm, EventStatusBadge, EventAiRecommendationsPanel, EventMapPanel } from '@/components/domain/event';
 import { IncidentCard, IncidentForm } from '@/components/domain/incident';
@@ -40,6 +44,8 @@ const cancelSchema = z.object({
 });
 type CancelValues = z.infer<typeof cancelSchema>;
 const PREVIEW_ROW = 'flex min-w-0 shrink-0 flex-col';
+/** Высота блока со списком координаторов в модалке фиксирована — окно не сжимается при пустом поиске. */
+const COORD_PICKER_LIST_AREA = 'h-[min(360px,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden rounded-md border border-secondary/35 bg-surface-muted/40';
 function formatInitials(fullName: string | undefined): string {
     if (!fullName)
         return '—';
@@ -145,6 +151,7 @@ export const EventDetailPage = () => {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+    const [createTaskBodyScroll, setCreateTaskBodyScroll] = useState(true);
     const [isCreateIncidentOpen, setIsCreateIncidentOpen] = useState(false);
     const [isAssignCoordOpen, setIsAssignCoordOpen] = useState(false);
     const [coordSearch, setCoordSearch] = useState('');
@@ -192,7 +199,6 @@ export const EventDetailPage = () => {
         const next = Array.from(new Set([...event.coordinatorIds, pickUserId]));
         void dispatch(updateEventThunk({ eventId: event.id, coordinatorIds: next } as never)).then((r) => {
             if (updateEventThunk.fulfilled.match(r)) {
-                setIsAssignCoordOpen(false);
                 void dispatch(fetchEventByIdThunk(event.id));
             }
         });
@@ -221,10 +227,20 @@ export const EventDetailPage = () => {
         if (eventId !== undefined) {
             void dispatch(fetchEventByIdThunk(eventId));
             if (canLoadUserDirectory) {
-                void dispatch(fetchUsersThunk({ page: 1, size: 400 }));
+                void dispatch(fetchUsersThunk({ page: 1, size: 500 }));
             }
         }
     }, [dispatch, eventId, canLoadUserDirectory]);
+    useEffect(() => {
+        if (!isAssignCoordOpen || !canMutateLiveEvent) {
+            return;
+        }
+        void dispatch(fetchUsersThunk({ page: 1, size: 500, role: UserRole.COORDINATOR }));
+        if (isAdminUser) {
+            void dispatch(fetchUsersThunk({ page: 1, size: 500, role: UserRole.ORGANIZER }));
+            void dispatch(fetchUsersThunk({ page: 1, size: 500, role: UserRole.ADMIN }));
+        }
+    }, [isAssignCoordOpen, canMutateLiveEvent, isAdminUser, dispatch]);
     useEffect(() => {
         if (eventId === undefined || isPureParticipant)
             return;
@@ -327,7 +343,7 @@ export const EventDetailPage = () => {
         });
         return result;
     }, [event, tasks]);
-    const mapCenter = geoPointFromLatLng(event?.latitude, event?.longitude);
+    const mapCenter = useMemo(() => geoPointFromLatLng(event?.latitude, event?.longitude), [event?.latitude, event?.longitude]);
     const tasksPreview = useMemo(() => {
         const sorted = [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime));
         return slicePreviewList(sorted);
@@ -381,7 +397,8 @@ export const EventDetailPage = () => {
                 </Typography>
               </div>
             </div>
-          </Card>
+            </Card>
+          <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
           <div>
             <Button variant="secondary" onClick={() => {
                 if (returnTaskId !== undefined && Number.isFinite(returnTaskId)) {
@@ -447,33 +464,49 @@ export const EventDetailPage = () => {
       {incidentsAction.error ? (<ErrorMessage message={incidentsAction.error.message} onShown={() => dispatch(incidentsActions.clearActionError())}/>) : null}
 
       <section className="w-full min-w-0 border-b border-secondary/50 pb-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            {event.title}
-          </Typography>
-          <EventStatusBadge status={event.status}/>
-        </div>
-        <Typography variant="body2" color="text.secondary" className="mt-2">
-          {formatDateTime(event.startDate)} — {formatDateTime(event.endDate)}
-        </Typography>
-        {event.description?.trim() ? (<Typography variant="body1" className="mt-4 w-full min-w-0 text-headline">
-            {event.description.trim()}
-          </Typography>) : null}
+        <div className="flex flex-row items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                {event.title}
+              </Typography>
+              <EventStatusBadge status={event.status}/>
+            </div>
+            <Typography variant="body2" color="text.secondary" className="mt-2">
+              {formatDateTime(event.startDate)} — {formatDateTime(event.endDate)}
+            </Typography>
+            {event.description?.trim() ? (<Typography variant="body1" className="mt-4 w-full min-w-0 text-headline">
+                {event.description.trim()}
+              </Typography>) : null}
+          </div>
 
-        {canEditLiveEvent || canMutateLiveEvent ? (<div className="mt-5 flex flex-wrap gap-2">
-            {canEditLiveEvent ? (<Button size="sm" variant="secondary" onClick={() => {
-                    dispatch(eventsActions.clearActionError());
-                    setIsEditOpen(true);
-                }}>
-                Редактировать мероприятие
-              </Button>) : null}
-            {canMutateLiveEvent && event.status === EventStatus.ACTIVE ? (<Button size="sm" onClick={() => handleStatusAction(completeEventThunk)} loading={action.status === 'pending'}>
-                Завершить
-              </Button>) : null}
-            {canEditLiveEvent && isCancellable ? (<Button size="sm" variant="danger" onClick={() => setIsCancelOpen(true)} disabled={action.status === 'pending'}>
-                Отменить мероприятие
-              </Button>) : null}
-          </div>) : null}
+          {canEditLiveEvent || canMutateLiveEvent ? (<div className="flex shrink-0 flex-col gap-2 md:flex-row md:items-start md:gap-2 [&_button]:!h-10 [&_button]:!w-10 [&_button]:!min-h-[40px] [&_button]:!min-w-[40px] [&_button]:!max-h-[40px] [&_button]:!max-w-[40px]">
+              {canEditLiveEvent ? (<Tooltip title="Редактировать мероприятие" placement="top" enterDelay={400}>
+                  <span className="inline-flex">
+                    <Button size="icon" variant="ghost" className="shrink-0 rounded-[10px] border border-secondary/55 bg-surface/90 text-headline shadow-sm transition-colors hover:border-secondary hover:bg-surface-muted" aria-label="Редактировать мероприятие" onClick={() => {
+                        dispatch(eventsActions.clearActionError());
+                        setIsEditOpen(true);
+                    }}>
+                      <EditOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                    </Button>
+                  </span>
+                </Tooltip>) : null}
+              {canMutateLiveEvent && event.status === EventStatus.ACTIVE ? (<Tooltip title="Завершить мероприятие" placement="top" enterDelay={400}>
+                  <span className="inline-flex">
+                    <Button size="icon" variant="ghost" className="shrink-0 rounded-[10px] border border-highlight/35 bg-surface/90 text-highlight shadow-sm transition-colors hover:border-highlight/55 hover:bg-surface-muted" aria-label="Завершить мероприятие" onClick={() => handleStatusAction(completeEventThunk)} loading={action.status === 'pending'}>
+                      <CheckCircle sx={{ fontSize: 22, color: 'currentColor' }}/>
+                    </Button>
+                  </span>
+                </Tooltip>) : null}
+              {canEditLiveEvent && isCancellable ? (<Tooltip title="Отменить мероприятие" placement="top" enterDelay={400}>
+                  <span className="inline-flex">
+                    <Button size="icon" variant="ghost" className="shrink-0 rounded-[10px] border border-secondary/55 bg-surface/90 text-tertiary shadow-sm transition-colors hover:border-tertiary/45 hover:bg-surface-muted disabled:opacity-40" aria-label="Отменить мероприятие" onClick={() => setIsCancelOpen(true)} disabled={action.status === 'pending'}>
+                      <BlockOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                    </Button>
+                  </span>
+                </Tooltip>) : null}
+            </div>) : null}
+        </div>
 
         <dl className={`mt-8 grid w-full min-w-0 grid-cols-1 gap-6 text-sm ${hideEventCoordinatorRoster ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
           <Field label="Создатель" value={event.creatorId === undefined ? ('—') : (<SelfOrProfileLink subjectUserId={asUserId(event.creatorId)} viewerUserId={user?.id} nameLabel={formatInitials(userById.get(event.creatorId)?.fullName)}/>)}/>
@@ -488,7 +521,6 @@ export const EventDetailPage = () => {
                   {canMutateLiveEvent ? (<Button size="icon" variant="ghost" className="h-9 w-9 rounded-full border border-secondary/50" onClick={() => {
                         setCoordSearch('');
                         setIsAssignCoordOpen(true);
-                        void dispatch(fetchUsersThunk({ page: 1, size: 400 }));
                     }} aria-label="Назначить координатора">
                       <AddCircleIcon sx={{ fontSize: 20 }}/>
                     </Button>) : null}
@@ -503,9 +535,9 @@ export const EventDetailPage = () => {
           <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
             Сводка
           </Typography>
-          {dashboard.status === 'pending' && !dashboard.data ? (<Typography variant="body2" color="text.secondary">
-              Загрузка статистики…
-            </Typography>) : null}
+          {dashboard.status === 'pending' && !dashboard.data ? (<div className="flex justify-center py-6">
+              <Spinner size="lg" label="Загрузка статистики"/>
+            </div>) : null}
           {dashboard.error ? <ErrorMessage message={dashboard.error.message}/> : null}
           {dashboard.data ? (<EventDashboardWidget data={dashboard.data} variant="embedded"/>) : null}
         </section>) : null}
@@ -607,7 +639,7 @@ export const EventDetailPage = () => {
           </div>
           {canManageEvent && event.status === EventStatus.COMPLETED ? (<EventAiRecommendationsPanel fetchStatus={postMortem.status} fetchError={postMortem.error} report={postMortemReportForEvent} pollTimedOut={postMortemPollTimedOut}/>) : null}
         </div>) : (<Card>
-          <EmptyState title="Планирование недоступно"/>
+          <EmptyState title="Прежде чем начать планирование, назначьте координаторов"/>
         </Card>)}
 
       <Modal open={isCreateIncidentOpen && !eventClosed && hasCoordinator} onClose={() => {
@@ -623,47 +655,59 @@ export const EventDetailPage = () => {
           </>) : null}
       </Modal>
 
-      <Modal open={isCreateTaskOpen && canMutateLiveEvent && hasCoordinator} onClose={() => {
+      <Modal open={isCreateTaskOpen && canMutateLiveEvent && hasCoordinator} bodyScroll={createTaskBodyScroll} onClose={() => {
             dispatch(tasksActions.clearActionError());
+            setCreateTaskBodyScroll(true);
             setIsCreateTaskOpen(false);
         }} title="Новая задача" size="lg">
-        {user && canMutateLiveEvent && hasCoordinator && isCreateTaskOpen ? (<TaskCreateWizard open eventId={event.id} onClose={() => {
+        {user && canMutateLiveEvent && hasCoordinator && isCreateTaskOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0)} onClose={() => {
                 dispatch(tasksActions.clearActionError());
+                setCreateTaskBodyScroll(true);
                 setIsCreateTaskOpen(false);
             }}/>) : null}
       </Modal>
 
       {canMutateLiveEvent ? (<Modal open={isAssignCoordOpen} onClose={() => setIsAssignCoordOpen(false)} title="Назначение координатора" size="md">
-          <div className="flex flex-col gap-3">
-            <Input label="Поиск" value={coordSearch} onChange={(e) => setCoordSearch(e.target.value)} placeholder="По имени или логину"/>
-            {showAssignSelfAsCoordinator ? (<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <p className="min-w-0 flex-1 text-xs leading-snug text-paragraph">
-                  Можно назначить себя или выбрать пользователя в списке ниже.
-                </p>
-                <Button size="sm" variant="primary" className="w-full shrink-0 sm:w-auto" disabled={action.status === 'pending'} onClick={() => user && appendCoordinator(user.id)}>
-                  Назначить себя координатором
-                </Button>
-              </div>) : null}
-            {!showAssignSelfAsCoordinator ? (<div className="text-xs text-paragraph">
-                Выберите пользователя в списке ниже.
-              </div>) : null}
-            {usersList.status === 'pending' ? (<div className="text-sm text-paragraph">Загрузка…</div>) : null}
-            <div className="grid gap-2">
-              {coordinatorPickerRows.map((u) => {
+          <div className="flex w-full min-w-0 flex-col gap-3">
+            <div className="shrink-0 flex flex-col gap-3">
+              <Input label="Поиск" value={coordSearch} onChange={(e) => setCoordSearch(e.target.value)} placeholder="По имени или логину"/>
+              {showAssignSelfAsCoordinator ? (<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <p className="min-w-0 flex-1 text-xs leading-snug text-paragraph">
+                    Можно назначить себя или выбрать пользователя в списке ниже.
+                  </p>
+                  <Button size="sm" variant="primary" className="w-full shrink-0 sm:w-auto" disabled={action.status === 'pending'} onClick={() => user && appendCoordinator(user.id)}>
+                    Назначить себя координатором
+                  </Button>
+                </div>) : null}
+              {!showAssignSelfAsCoordinator ? (<div className="text-xs text-paragraph">
+                  Выберите пользователя в списке ниже.
+                </div>) : null}
+            </div>
+            <div className={COORD_PICKER_LIST_AREA}>
+              {usersList.status === 'pending' ? (<div className="flex h-full items-center justify-center px-2 py-6">
+                  <Spinner size="lg" label="Загрузка списка пользователей"/>
+                </div>) : (<div className="h-full overflow-y-auto overscroll-contain px-2 py-2">
+                  {coordinatorPickerRows.length === 0 ? (<p className="text-sm text-paragraph">
+                      {coordSearch.trim() ? 'Таких координаторов не найдено.' : 'Координаторов для выбора нет.'}
+                    </p>) : (<div className="grid gap-2 pr-1">
+                      {coordinatorPickerRows.map((u) => {
                 const already = event.coordinatorIds.includes(u.id);
                 return (<div key={String(u.id)} className="flex items-center justify-between gap-3 rounded-lg border border-secondary/50 bg-bg px-3 py-2">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-headline">
                         {u.fullName}
                       </div>
-                      <div className="truncate text-xs text-paragraph">@{u.username}</div>
+                      <div className="min-w-0 max-w-full truncate text-xs text-paragraph">
+                        <SelfOrProfileLink subjectUserId={asUserId(u.id)} viewerUserId={user ? asUserId(user.id) : undefined} nameLabel={`@${u.username}`} className="inline-block max-w-full truncate text-primary underline-offset-2 hover:underline"/>
+                      </div>
                     </div>
                     <Button size="sm" disabled={already || action.status === 'pending'} onClick={() => appendCoordinator(u.id)}>
                       {already ? 'Назначен' : 'Назначить'}
                     </Button>
                   </div>);
             })}
-              {usersList.status !== 'pending' && coordinatorPickerRows.length === 0 ? (<div className="text-sm text-paragraph">Никого не найдено.</div>) : null}
+                    </div>)}
+                </div>)}
             </div>
           </div>
         </Modal>) : null}

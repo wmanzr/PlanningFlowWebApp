@@ -10,6 +10,7 @@ export * from './ErrorBoundary';
 export * from './ThemeProvider';
 export * from './AppShell';
 export * from './PageLayout';
+export * from './PublicNavHeader';
 export * from './Card';
 export { PREVIEW_LIST_MAX_ITEMS, SUMMARY_PREVIEW_PANEL_BODY, SUMMARY_PREVIEW_PANEL_HEADER, slicePreviewList, } from './previewPanel';
 export * from './EmailLink';

@@ -133,7 +133,7 @@ export const IncidentsPage = () => {
           </Link>}>
         <Card padded={false}>
           <div className="p-6">
-            <EmptyState title="Планирование недоступно"/>
+            <EmptyState title="Прежде чем начать планирование, назначьте координаторов"/>
           </div>
         </Card>
       </PageLayout>);
@@ -175,12 +175,10 @@ export const IncidentsPage = () => {
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-4">
-          <div className="max-w-md">
-            <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => {
+          <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => {
             setStatusFilter(e.target.value === '' ? '' : (e.target.value as IncidentStatus));
             setPage(1);
         }}/>
-          </div>
           {list.status === 'pending' && incidents.length === 0 ? <LoadingArea /> : null}
           {list.status !== 'pending' && filteredIncidents.length === 0 ? (<EmptyState title={incidents.length === 0 ? 'Инцидентов нет' : 'Ничего не найдено'} {...(incidents.length > 0 ? { description: 'Измените фильтр по статусу.' } : {})}/>) : null}
           {filteredIncidents.map((incident) => (<IncidentRow key={incident.id} incident={incident} actions={<>

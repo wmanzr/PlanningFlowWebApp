@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
-import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { uiActions } from '@/store/slices/ui/uiSlice';
+import { useAppSelector } from '@/store';
 import { selectTheme } from '@/store/slices/ui/selectors';
 import { publicApi, type PublicLandingStatsDto } from '@/api';
-import { Button } from '@/components/ui';
+import { Button, PublicNavHeader } from '@/components/ui';
 import { PATHS } from '../paths';
 const CONTACT_EMAIL = (import.meta.env.VITE_PUBLIC_CONTACT_EMAIL as string | undefined)?.trim() || 'contact@planflow.app';
 const PROJECT_NOTE = (import.meta.env.VITE_PUBLIC_PROJECT_BYLINE as string | undefined)?.trim() ||
@@ -51,7 +47,6 @@ function useAnimatedCount(target: number, durationMs: number) {
 const nf = new Intl.NumberFormat('ru-RU');
 export const LandingPage = () => {
     const navigate = useNavigate();
-    const dispatch = useAppDispatch();
     const mode = useAppSelector(selectTheme);
     const theme = useTheme();
     const app = theme.app;
@@ -120,33 +115,25 @@ export const LandingPage = () => {
         }}/>
         </div>
 
-        <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pt-4 md:px-10">
-          <span className="text-sm font-semibold tracking-tight text-headline md:text-base">
-            PlanningFlow
-          </span>
-          <IconButton onClick={() => dispatch(uiActions.toggleTheme())} aria-label="Переключить тему" size="small" sx={{
-            border: `1px solid ${mode === 'dark' ? 'rgba(148,161,178,0.35)' : 'rgba(43,44,52,0.12)'}`,
-            backgroundColor: mode === 'dark' ? 'rgba(31,33,40,0.6)' : 'rgba(255,255,254,0.7)',
-            backdropFilter: 'blur(10px)',
-        }}>
-            {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small"/> : <DarkModeOutlinedIcon fontSize="small"/>}
-          </IconButton>
-        </header>
+        <PublicNavHeader/>
 
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 pb-6 pt-4 md:px-10 md:pb-10 md:pt-6">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-paragraph/75 md:text-xs">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-paragraph/75 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade md:text-xs">
               События · Задачи · Ресурсы
             </p>
-            <h1 className="text-balance bg-gradient-to-b from-headline via-headline to-headline/75 bg-clip-text text-[1.55rem] font-semibold leading-tight tracking-tight text-transparent md:text-[2.55rem] md:leading-[1.12]">
+            <h1 className="text-balance text-[1.55rem] font-semibold leading-tight tracking-tight text-headline opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:70ms] md:text-[2.55rem] md:leading-[1.12]">
               Одно приложение для подготовки мероприятия и контроля задач
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-paragraph/90 md:mt-4 md:text-[15px]">
+            <div className="mx-auto mt-3 h-[3px] w-16 max-w-[min(12rem,55%)] origin-center rounded-full opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-line motion-safe:[animation-delay:140ms] md:mt-4 md:w-20" style={{
+            background: `linear-gradient(90deg, ${app.button}, ${app.accent})`,
+        }} aria-hidden/>
+            <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-paragraph/90 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:210ms] md:mt-4 md:text-[15px]">
                 Один план — одна система. Все задачи, люди и ресурсы синхронизированы и всегда актуальны.
             </p>
           </div>
 
-          <div className="mx-auto mt-6 grid max-w-5xl gap-2.5 sm:grid-cols-3 md:mt-8 md:gap-3">
+          <div className="mx-auto mt-6 grid max-w-5xl gap-2.5 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:280ms] sm:grid-cols-3 md:mt-8 md:gap-3">
             {[{
                 t: 'Команда под контролем',
                 d: 'Назначайте людей на задачи и сразу видите, кто за что отвечает. Без хаоса в чатах.',
@@ -162,7 +149,7 @@ export const LandingPage = () => {
               </div>))}
           </div>
 
-          <div className="mx-auto mt-6 grid w-full max-w-5xl grid-cols-2 gap-2 sm:grid-cols-3 md:mt-8 md:gap-3">
+          <div className="mx-auto mt-6 grid w-full max-w-5xl grid-cols-2 gap-2 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:360ms] sm:grid-cols-3 md:mt-8 md:gap-3">
             {statRows.map((row) => (<div key={row.label} className="rounded-xl border border-secondary/45 bg-surface-muted/55 px-3 py-2.5 backdrop-blur-md md:py-3">
                 <p className="text-[10px] font-medium uppercase leading-snug tracking-wide text-paragraph/70 md:text-[11px]">
                   {row.label}
@@ -175,7 +162,7 @@ export const LandingPage = () => {
               </div>))}
           </div>
 
-          <div className="mx-auto mt-7 flex max-w-xl flex-col items-center md:mt-9">
+          <div className="mx-auto mt-7 flex max-w-xl flex-col items-center opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:440ms] md:mt-9">
             <Button size="lg" className="!min-h-0 !rounded-full !px-8 !py-2 !text-base font-semibold !leading-snug shadow-xl sm:!px-10 sm:!text-lg md:!px-16 md:!py-4 md:!text-xl" style={{
             background: `linear-gradient(135deg, ${app.button} 0%, ${app.accent} 100%)`,
             boxShadow: `0 16px 48px ${app.accentSoft}`,

@@ -71,7 +71,7 @@ export const UsersDirectoryPage = () => {
     };
     return (<PageLayout title="Участники">
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Input label="Поиск по ФИО или логину" placeholder="Введите ФИО или логин пользователя" value={search} onChange={(e) => handleSearchChange(e.target.value)}/>
         <Select label="Роль" options={roleFilterOptions} value={roleFilter} onChange={(e) => handleRoleFilterChange(e.target.value)}/>
       </div>

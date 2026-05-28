@@ -15,6 +15,8 @@ export interface ModalProps {
     children?: ReactNode;
     size?: 'sm' | 'md' | 'ml' | 'lg';
     closeOnBackdrop?: boolean;
+    /** When false, the dialog body does not scroll; children should use internal scroll areas. */
+    bodyScroll?: boolean;
 }
 const sizeMap: Record<NonNullable<ModalProps['size']>, 'xs' | 'sm' | 'md' | false> = {
     sm: 'xs',
@@ -25,15 +27,26 @@ const sizeMap: Record<NonNullable<ModalProps['size']>, 'xs' | 'sm' | 'md' | fals
 const PAPER_MAX_WIDTH_PX: Partial<Record<NonNullable<ModalProps['size']>, number>> = {
     ml: 720,
 };
-export const Modal = ({ open, onClose, title, description, footer, children, size = 'md', closeOnBackdrop = true, }: ModalProps) => {
+export const Modal = ({ open, onClose, title, description, footer, children, size = 'md', closeOnBackdrop = true, bodyScroll = true, }: ModalProps) => {
     const paperMaxWidth = PAPER_MAX_WIDTH_PX[size];
-    return (<Dialog open={open} onClose={closeOnBackdrop ? onClose : undefined} maxWidth={sizeMap[size]} fullWidth scroll="paper" sx={paperMaxWidth !== undefined
+    const paperSx = {
+        ...(paperMaxWidth !== undefined
             ? {
-                '& .MuiDialog-paper': {
-                    maxWidth: paperMaxWidth,
-                    width: 'calc(100% - 32px)',
-                },
+                maxWidth: paperMaxWidth,
+                width: 'calc(100% - 32px)',
             }
+            : {}),
+        ...(!bodyScroll
+            ? {
+                maxHeight: 'min(92vh, 900px)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+            }
+            : {}),
+    };
+    return (<Dialog open={open} onClose={closeOnBackdrop ? onClose : undefined} maxWidth={sizeMap[size]} fullWidth scroll="paper" sx={Object.keys(paperSx).length > 0
+            ? { '& .MuiDialog-paper': paperSx }
             : undefined} slotProps={{
             backdrop: {
                 sx: { backdropFilter: 'blur(2px)' },
@@ -54,10 +67,18 @@ export const Modal = ({ open, onClose, title, description, footer, children, siz
             </IconButton>
           </div>
         </DialogTitle>) : null}
-      <DialogContent dividers={!!(title ?? description)} sx={{
-            maxHeight: 'min(85vh, 880px)',
-            overflowY: 'auto',
-        }}>
+      <DialogContent dividers={!!(title ?? description)} sx={bodyScroll
+            ? {
+                maxHeight: 'min(85vh, 880px)',
+                overflowY: 'auto',
+            }
+            : {
+                flex: '1 1 auto',
+                minHeight: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+            }}>
         {children}
       </DialogContent>
       {footer ? (<DialogActions sx={{ px: 3, py: 2 }}>

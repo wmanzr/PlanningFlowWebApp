@@ -106,7 +106,7 @@ export const EventsListPage = () => {
             }}>
             Создать мероприятие
           </Button>) : null}>
-      <div className="mb-4 grid gap-3 md:grid-cols-2">
+      <div className="mb-4 grid gap-3 md:grid-cols-2 md:items-start">
         <Input label="Поиск по названию" placeholder="например, городской фестиваль" value={titleSearch} onChange={(e: ChangeEvent<HTMLInputElement>) => handleTitleChange(e.target.value)}/>
         <Select label="Статус" options={statusFilterOptions} value={statusFilter} onChange={(e) => handleStatusFilterChange(e.target.value)}/>
       </div>

@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { loginThunk } from '@/store/slices/auth/authSlice';
 import { selectAuthError, selectAuthStatus, selectCurrentUser, selectIsAuthenticated, } from '@/store/slices/auth/selectors';
-import { Button, Card, ErrorMessage, Input, PageLayout, } from '@/components/ui';
+import { Button, Card, ErrorMessage, Input, PageLayout, PublicNavHeader, } from '@/components/ui';
 import { getPostLoginPath } from '@/utils/postLoginPath';
 import { PATHS } from '../paths';
 const USERNAME_MIN_LENGTH = 3;
@@ -45,7 +45,9 @@ export const AuthPage = () => {
     const onSubmit = handleSubmit(async (values) => {
         await dispatch(loginThunk(values));
     });
-    return (<PageLayout>
+    return (<>
+      <PublicNavHeader/>
+      <PageLayout>
       <Box sx={{ mx: 'auto', display: 'flex', width: '100%', maxWidth: 448, flexDirection: 'column', gap: 3, py: 6 }}>
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }} color="text.primary">
@@ -72,5 +74,6 @@ export const AuthPage = () => {
           </form>
         </Card>
       </Box>
-    </PageLayout>);
+    </PageLayout>
+    </>);
 };

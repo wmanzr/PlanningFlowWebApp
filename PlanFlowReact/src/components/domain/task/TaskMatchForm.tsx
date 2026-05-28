@@ -73,11 +73,11 @@ export const TaskMatchForm = ({ initialRequired = DEFAULT_REQUIRED, submitting, 
         });
     });
     return (<form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         <Input label="Нужно сотрудников" type="number" min={MIN_REQUIRED} error={errors.requiredCount?.message} {...register('requiredCount')}/>
         <Select label="Режим подбора" options={MODE_OPTIONS} {...register('matchingMode')}/>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 md:items-start">
         <Input label="Радиус, м" type="number" min={MIN_RADIUS} placeholder="опционально" error={errors.geoReferenceRadiusMeters?.message} {...register('geoReferenceRadiusMeters')}/>
         <Input label="Дневная нагрузка, мин" type="number" min={MIN_DAILY_LOAD} placeholder="опционально" error={errors.maxDailyLoadMinutes?.message} {...register('maxDailyLoadMinutes')}/>
         <Input label="Тех. зазор, мин" type="number" min={MIN_GAP} placeholder="опционально" error={errors.minTechnicalGapMinutes?.message} {...register('minTechnicalGapMinutes')}/>

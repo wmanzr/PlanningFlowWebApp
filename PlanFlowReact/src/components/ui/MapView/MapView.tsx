@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { load } from '@2gis/mapgl';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -8,7 +8,7 @@ import { Button } from '../Button';
 import { Spinner } from '../Spinner';
 import { cn } from '../cn';
 import type { GeoPoint } from '@/types';
-import { MAP_DEFAULT_CENTER, MAP_ZOOM_OVERVIEW, MAP_ZOOM_TASK_LABELS_MIN } from './mapConfig';
+import { MAP_DEFAULT_CENTER, MAP_ZOOM_LEGEND_FOCUS, MAP_ZOOM_OVERVIEW, MAP_ZOOM_TASK_LABELS_MIN } from './mapConfig';
 import { layoutMapMarkers } from './mapMarkerLayout';
 import { buildMapMarkerHtml, MAP_PRIMARY_PIN_COLOR, resolveMapMarkerColor } from './mapMarkerHtml';
 import type { MapMarker, MapMarkerKind } from './mapMarker.types';
@@ -25,13 +25,19 @@ export interface MapViewProps {
     height?: string;
     className?: string;
 }
+type MapglMoveAnimation = {
+    animate?: boolean;
+    duration?: number;
+    easing?: string;
+    useHeightForAnimation?: boolean;
+};
 interface MapInstance {
     destroy: () => void;
     setCenter: (lngLat: [
         number,
         number
-    ]) => void;
-    setZoom: (zoom: number) => void;
+    ], animation?: MapglMoveAnimation) => void;
+    setZoom: (zoom: number, animation?: MapglMoveAnimation) => void;
     getZoom: () => number;
     on: (event: string, handler: (e?: {
         lngLat?: [
@@ -83,6 +89,10 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
     const onMarkerClickRef = useRef(onMarkerClick);
     const [mapLoadStatus, setMapLoadStatus] = useState<MapLoadStatus>('loading');
     const [mapZoom, setMapZoom] = useState(zoom);
+    const [legendFlyRequest, setLegendFlyRequest] = useState<{
+        markerId: string;
+        nonce: number;
+    } | null>(null);
     const [loadAttempt, setLoadAttempt] = useState(0);
     const apiKey = (import.meta.env.VITE_2GIS_API_KEY ?? '').toString().trim();
     const mapReady = mapLoadStatus === 'ready';
@@ -91,6 +101,15 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
     const legendVisible = showLegend && markers.length > 0;
     onMapClickRef.current = onMapClick;
     onMarkerClickRef.current = onMarkerClick;
+    const onLegendItemFly = useCallback((marker: MapMarker) => {
+        if (marker.kind !== 'event' && marker.kind !== 'task') {
+            return;
+        }
+        if (!mapReady) {
+            return;
+        }
+        setLegendFlyRequest({ markerId: marker.id, nonce: Date.now() });
+    }, [mapReady]);
     useEffect(() => {
         if (!apiKey || !containerRef.current) {
             return undefined;
@@ -179,7 +198,7 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
             setMapLoadStatus('loading');
             teardownMap();
         };
-    }, [apiKey, loadAttempt]);
+    }, [apiKey, loadAttempt, center.latitude, center.longitude, zoom]);
     const retryMapLoad = () => {
         setMapLoadStatus('loading');
         setLoadAttempt((n) => n + 1);
@@ -191,7 +210,30 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
         mapRef.current.setCenter(toLngLat(center));
         mapRef.current.setZoom(zoom);
         setMapZoom(mapRef.current.getZoom());
-    }, [viewResetKey, mapReady, center, zoom]);
+    }, [viewResetKey, mapReady, center.latitude, center.longitude, zoom]);
+    useEffect(() => {
+        if (!mapReady || !mapRef.current || legendFlyRequest === null) {
+            return;
+        }
+        const placed = placedMarkers.find((p) => p.id === legendFlyRequest.markerId);
+        if (!placed) {
+            return;
+        }
+        const map = mapRef.current;
+        const duration = 880;
+        const easing = 'easeOutCubic';
+        map.setCenter([placed.displayLng, placed.displayLat], {
+            animate: true,
+            duration,
+            easing,
+        });
+        map.setZoom(MAP_ZOOM_LEGEND_FOCUS, {
+            animate: true,
+            duration,
+            easing,
+            useHeightForAnimation: true,
+        });
+    }, [mapReady, legendFlyRequest, placedMarkers]);
     useEffect(() => {
         if (!mapReady || !mapRef.current || !apiKey) {
             return;
@@ -280,6 +322,6 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
                         </Button>
                     </Box>) : null}
             </Paper>
-            {legendVisible ? (<MapMarkersLegend markers={markers} className="mt-2 rounded-md border border-secondary/40 bg-surface-muted/60 px-3 py-2"/>) : null}
+            {legendVisible ? (<MapMarkersLegend markers={markers} {...(mapReady ? { onLegendItemClick: onLegendItemFly } : {})} className="mt-2 rounded-md border border-secondary/40 bg-surface-muted/60 px-3 py-2"/>) : null}
         </div>);
 };

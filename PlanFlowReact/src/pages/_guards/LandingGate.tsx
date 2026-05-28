@@ -9,7 +9,7 @@ export const LandingGate = () => {
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
     const user = useAppSelector(selectCurrentUser);
     if (!initialised) {
-        return <LoadingArea label="Загрузка"/>;
+        return <LoadingArea />;
     }
     if (isAuthenticated && user) {
         return <Navigate to={getPostLoginPath(user.roles)} replace/>;

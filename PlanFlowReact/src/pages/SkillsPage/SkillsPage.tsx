@@ -85,7 +85,7 @@ export const SkillsPage = () => {
     return (<PageLayout title="Справочник навыков" description="Используется при подборе персонала на задачи." actions={canManageCatalog ? (<Button onClick={() => setIsCreateOpen(true)}>Добавить навык</Button>) : undefined}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(skillsActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Input label="Поиск по названию" placeholder="Введите название навыка" value={search} onChange={(e) => setSearch(e.target.value)}/>
         <Select label="Категория" options={[
             { value: '', label: 'Все категории' },

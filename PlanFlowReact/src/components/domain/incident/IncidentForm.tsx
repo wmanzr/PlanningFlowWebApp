@@ -156,7 +156,7 @@ export const IncidentForm = ({ reporterId, eventId, tasks, defaultTaskId, submit
       <input type="hidden" {...register('taskId', { valueAsNumber: true })}/>
 
       <Textarea label="Описание" rows={4} error={errors.description?.message} {...register('description')}/>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         <Select label="Критичность" placeholder="Выберите критичность" options={SEVERITY_OPTIONS} error={errors.severity?.message} {...register('severity')}/>
       </div>
 

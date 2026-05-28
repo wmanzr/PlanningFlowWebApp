@@ -125,25 +125,6 @@ export const UserDetailPage = () => {
             </Card>) : null}
 
           {(sessionIsOrganizer || sessionIsAdmin) ? (<>
-              {viewerCtx.data.organizerCoordinatorEvents.length > 0 ? (<Card padded={false}>
-                  <CardHeader title="Координатор ваших мероприятий (активные и в планировании)"/>
-                  <ul className="divide-y divide-stroke">
-                    {viewerCtx.data.organizerCoordinatorEvents.map((ev) => (<li key={ev.eventId} className="px-5 py-4">
-                        <Link className="font-medium text-headline hover:underline" to={PATHS.eventDetail(asEventId(ev.eventId))}>
-                          {ev.title}
-                        </Link>
-                        <div className="mt-1 flex flex-wrap gap-2 text-sm text-paragraph">
-                          <Badge tone="neutral" outline>
-                            {ev.status}
-                          </Badge>
-                          <span>{formatDateTime(ev.startDate)}</span>
-                          <span>—</span>
-                          <span>{formatDateTime(ev.endDate)}</span>
-                        </div>
-                      </li>))}
-                  </ul>
-                </Card>) : null}
-
               {user?.roles.includes(UserRole.COORDINATOR) ? (<Card>
                   <CardHeader title="Мероприятия под управлением"/>
                   <div className="grid gap-2 text-sm">

@@ -164,8 +164,10 @@ export interface TaskCreateWizardProps {
     open: boolean;
     eventId: EventId;
     onClose: () => void;
+    /** Notifies parent when step changes (e.g. to toggle modal body scroll on matching step). */
+    onStepChange?: (step: 0 | 1) => void;
 }
-export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardProps) => {
+export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskCreateWizardProps) => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const skills = useAppSelector(selectAllSkills);
@@ -343,6 +345,11 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
             resetWizard();
         }
     }, [open, resetWizard]);
+    useEffect(() => {
+        if (open) {
+            onStepChange?.(step);
+        }
+    }, [open, step, onStepChange]);
     useEffect(() => {
         if (!open || step !== 1 || !createdTaskId)
             return;
@@ -562,9 +569,9 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
     ]);
     if (!open)
         return null;
-    return (<div className="flex w-full min-w-[min(100%,42rem)] flex-col gap-4">
+    return (<div className={`flex w-full min-w-[min(100%,42rem)] flex-col gap-4 ${step === 1 ? 'min-h-0 flex-1' : ''}`}>
       {step === 0 ? (<form className="flex flex-col gap-4" onSubmit={goNext} noValidate>
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5.25rem,7rem)] items-end gap-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5.25rem,7rem)] items-start gap-3">
             <Input className="min-w-0" label="Название задачи" error={errors.title?.message} {...register('title')}/>
             <Input className="min-w-0 shrink-0" label="Человек" type="number" min={MIN_PEOPLE} max={MAX_PEOPLE} error={errors.requiredCount?.message} {...register('requiredCount')}/>
           </div>
@@ -672,8 +679,8 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
               Далее
             </Button>
           </div>
-        </form>) : (<div className="flex min-h-[min(640px,78vh)] flex-col gap-4">
-          <div className="flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
+        </form>) : (<div className="flex min-h-[min(560px,68vh)] flex-1 flex-col gap-3 overflow-hidden">
+          <div className="shrink-0 flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
               <Autocomplete disablePortal disabled={!hasParentTaskOptions} forcePopupIcon={hasParentTaskOptions} {...(!hasParentTaskOptions
             ? {
                 inputValue: PARENT_TASK_NONE_MESSAGE,
@@ -695,7 +702,7 @@ export const TaskCreateWizard = ({ open, eventId, onClose }: TaskCreateWizardPro
             </div>
 
           <ExecutorMatchingPicker matchResult={matchResult} matchStatus={matchStatus} matchError={matchError} taskStartTime={createdTaskEntity?.startTime} requiredSlots={requiredSlots} executors={executors} executorSearch={executorSearch} onExecutorSearchChange={setExecutorSearch} selectedExecutorIds={selectedExecutorIds} onToggleExecutor={toggleExecutorSelection}/>
-          <div className="mt-auto flex flex-wrap justify-between gap-2">
+          <div className="flex shrink-0 flex-wrap justify-between gap-2 border-t border-secondary/40 pt-3">
             <Button type="button" variant="ghost" onClick={() => {
                 setStep(0);
             }}>

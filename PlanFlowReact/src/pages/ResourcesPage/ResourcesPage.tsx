@@ -69,7 +69,7 @@ export const ResourcesPage = () => {
     return (<PageLayout title="Внутренние ресурсы" description="Каталог ресурсов организации, доступных для резервирования." actions={canCreateInternalResource ? (<Button onClick={() => setIsCreateOpen(true)}>Добавить ресурс</Button>) : undefined}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(resourcesActions.clearActionError())}/>) : null}
       {list.error ? <ErrorMessage message={list.error.message}/> : null}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 md:items-start">
         <Input label="Поиск по названию" placeholder="например, проектор" value={search} onChange={(e) => setSearch(e.target.value)}/>
         <Select label="Тип ресурса" options={[
             { value: '', label: 'Все типы' },

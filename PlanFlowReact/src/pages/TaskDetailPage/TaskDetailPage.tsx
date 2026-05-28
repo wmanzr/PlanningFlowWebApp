@@ -4,7 +4,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
+import BlockOutlined from '@mui/icons-material/BlockOutlined';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import PlayArrowOutlined from '@mui/icons-material/PlayArrowOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { allocateTaskResourcesThunk, cancelTaskThunk, fetchTaskByIdThunk, markTaskDoneThunk, startTaskExecutionThunk, unassignTaskThunk, updateTaskThunk, tasksActions, } from '@/store/slices/tasks/tasksSlice';
@@ -35,6 +39,9 @@ import { userCanReserveTaskResources } from '@/utils/userCanReserveTaskResources
 import { validationErrorsToToastMessage } from '@/utils/validationErrorsToToastMessage';
 import { PATHS } from '../paths';
 const INCIDENT_PREVIEW_ROW = 'flex min-w-0 shrink-0 flex-col';
+const TASK_CARD_HEADER_ACTIONS = 'flex shrink-0 flex-col gap-2 md:flex-row md:items-start md:gap-2 [&_button]:!h-10 [&_button]:!w-10 [&_button]:!min-h-[40px] [&_button]:!min-w-[40px] [&_button]:!max-h-[40px] [&_button]:!max-w-[40px]';
+const TASK_CARD_ICON_BTN_ACCENT = 'shrink-0 rounded-[10px] border border-highlight/35 bg-surface/90 text-highlight shadow-sm transition-colors hover:border-highlight/55 hover:bg-surface-muted';
+const TASK_CARD_ICON_BTN_DANGER = 'shrink-0 rounded-[10px] border border-secondary/55 bg-surface/90 text-tertiary shadow-sm transition-colors hover:border-tertiary/45 hover:bg-surface-muted disabled:opacity-40';
 function isExecutorParticipantView(user: ReturnType<typeof selectCurrentUser>): boolean {
     if (!user?.roles?.length)
         return false;
@@ -382,7 +389,7 @@ export const TaskDetailPage = () => {
 
         <Card className="overflow-hidden border-border/70 bg-gradient-to-br from-surface via-bg to-surface-muted/30 shadow-lg">
           <div className="border-b border-border/50 bg-surface-muted/25 px-5 py-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-row items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.08em' }}>
                   Задача
@@ -394,14 +401,22 @@ export const TaskDetailPage = () => {
                   <TaskStatusBadge status={task.status}/>
                 </div>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                {canStart ? (<Button size="sm" loading={action.status === 'pending'} onClick={() => void dispatch(startTaskExecutionThunk(task.id))}>
-                    Начать задачу
-                  </Button>) : null}
-                {canFinish ? (<Button size="sm" variant="secondary" loading={action.status === 'pending'} onClick={() => void dispatch(markTaskDoneThunk(task.id))}>
-                    Завершить задачу
-                  </Button>) : null}
-              </div>
+              {canStart || canFinish ? (<div className={TASK_CARD_HEADER_ACTIONS}>
+                  {canStart ? (<Tooltip title="Начать задачу" placement="top" enterDelay={400}>
+                      <span className="inline-flex">
+                        <Button size="icon" variant="ghost" className={TASK_CARD_ICON_BTN_ACCENT} aria-label="Начать задачу" onClick={() => void dispatch(startTaskExecutionThunk(task.id))} loading={action.status === 'pending'}>
+                          <PlayArrowOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                        </Button>
+                      </span>
+                    </Tooltip>) : null}
+                  {canFinish ? (<Tooltip title="Завершить задачу" placement="top" enterDelay={400}>
+                      <span className="inline-flex">
+                        <Button size="icon" variant="ghost" className={TASK_CARD_ICON_BTN_ACCENT} aria-label="Завершить задачу" onClick={() => void dispatch(markTaskDoneThunk(task.id))} loading={action.status === 'pending'}>
+                          <CheckCircle sx={{ fontSize: 22, color: 'currentColor' }}/>
+                        </Button>
+                      </span>
+                    </Tooltip>) : null}
+                </div>) : null}
             </div>
           </div>
 
@@ -565,22 +580,43 @@ export const TaskDetailPage = () => {
           Мероприятие «{event?.title ?? '—'}» в статусе планирования, срок уже начался. После нажатия «В работу» оно
           перейдёт в активный статус, если это первая задача мероприятия, взятая в работу.
         </Typography>) : null}
-      <Card>
-        <CardHeader title={<div className="flex items-center gap-3">
-              <span>{task.title}</span>
-              <TaskStatusBadge status={task.status}/>
-            </div>} actions={<div className="flex flex-wrap gap-2">
-              {canStart ? (<Button size="sm" loading={action.status === 'pending'} onClick={() => void dispatch(startTaskExecutionThunk(task.id))}>
-                  В работу
-                </Button>) : null}
-              {canFinish ? (<Button size="sm" loading={action.status === 'pending'} onClick={() => dispatch(markTaskDoneThunk(task.id))}>
-                  Завершить
-                </Button>) : null}
-              {canCancel ? (<Button size="sm" variant="danger" loading={action.status === 'pending'} onClick={() => dispatch(cancelTaskThunk(task.id))}>
-                  Отменить
-                </Button>) : null}
-            </div>}/>
-        <dl className="grid gap-4 px-5 pb-5 text-sm md:grid-cols-2">
+      <Card padded={false} className="overflow-hidden">
+        <div className="border-b border-secondary/50 px-5 py-4">
+          <div className="flex flex-row items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+              <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }} className="min-w-0 break-words text-headline">
+                {task.title}
+              </Typography>
+              <span className="shrink-0">
+                <TaskStatusBadge status={task.status}/>
+              </span>
+            </div>
+            {canStart || canFinish || canCancel ? (<div className={TASK_CARD_HEADER_ACTIONS}>
+                {canStart ? (<Tooltip title="В работу" placement="top" enterDelay={400}>
+                    <span className="inline-flex">
+                      <Button size="icon" variant="ghost" className={TASK_CARD_ICON_BTN_ACCENT} aria-label="Взять задачу в работу" onClick={() => void dispatch(startTaskExecutionThunk(task.id))} loading={action.status === 'pending'}>
+                        <PlayArrowOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                      </Button>
+                    </span>
+                  </Tooltip>) : null}
+                {canFinish ? (<Tooltip title="Завершить задачу" placement="top" enterDelay={400}>
+                    <span className="inline-flex">
+                      <Button size="icon" variant="ghost" className={TASK_CARD_ICON_BTN_ACCENT} aria-label="Завершить задачу" onClick={() => void dispatch(markTaskDoneThunk(task.id))} loading={action.status === 'pending'}>
+                        <CheckCircle sx={{ fontSize: 22, color: 'currentColor' }}/>
+                      </Button>
+                    </span>
+                  </Tooltip>) : null}
+                {canCancel ? (<Tooltip title="Отменить задачу" placement="top" enterDelay={400}>
+                    <span className="inline-flex">
+                      <Button size="icon" variant="ghost" className={TASK_CARD_ICON_BTN_DANGER} aria-label="Отменить задачу" onClick={() => dispatch(cancelTaskThunk(task.id))} loading={action.status === 'pending'}>
+                        <BlockOutlined sx={{ fontSize: 22, color: 'currentColor' }}/>
+                      </Button>
+                    </span>
+                  </Tooltip>) : null}
+              </div>) : null}
+          </div>
+        </div>
+        <dl className="grid gap-4 px-5 py-5 text-sm md:grid-cols-2">
           <Field label="Начало" value={formatDateTime(task.startTime)}/>
           <Field label="Завершение" value={formatDateTime(task.endTime)}/>
           <Field label="Координаты" value={typeof task.latitude === 'number' && typeof task.longitude === 'number'

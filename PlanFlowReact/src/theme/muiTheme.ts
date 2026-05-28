@@ -165,6 +165,36 @@ export function buildMuiTheme(mode: ThemeMode) {
                         },
                         '& .MuiInputLabel-root': { color: p.paragraph },
                         '& .MuiInputLabel-root.Mui-focused': { color: p.highlight },
+                        /* Нативные date/datetime в WebKit часто подкрашивают цифры «системным» жёлтым — фиксируем цвет текста. */
+                        '& .MuiOutlinedInput-input[type="date"], & .MuiOutlinedInput-input[type="datetime-local"]': {
+                            color: p.headline,
+                            WebkitTextFillColor: p.headline,
+                        },
+                        '& .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit': {
+                            color: p.headline,
+                            WebkitTextFillColor: p.headline,
+                        },
+                        '& .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit-fields-wrapper, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper': {
+                            color: p.headline,
+                            WebkitTextFillColor: p.headline,
+                        },
+                        '& .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit-text, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-text': {
+                            color: p.paragraph,
+                            WebkitTextFillColor: p.paragraph,
+                        },
+                        '& .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit-month-field, & .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit-day-field, & .MuiOutlinedInput-input[type="date"]::-webkit-datetime-edit-year-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-month-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-day-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-year-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-hour-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-minute-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-second-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-millisecond-field, & .MuiOutlinedInput-input[type="datetime-local"]::-webkit-datetime-edit-ampm-field': {
+                            color: p.headline,
+                            WebkitTextFillColor: p.headline,
+                        },
+                        '& .MuiOutlinedInput-input:-webkit-autofill': {
+                            WebkitBoxShadow: `0 0 0 1000px ${p.bg} inset`,
+                            WebkitTextFillColor: `${p.headline}`,
+                            transition: 'background-color 9999s ease-out',
+                        },
+                        '& .MuiOutlinedInput-input:-webkit-autofill:hover, & .MuiOutlinedInput-input:-webkit-autofill:focus': {
+                            WebkitBoxShadow: `0 0 0 1000px ${p.bg} inset`,
+                            WebkitTextFillColor: `${p.headline}`,
+                        },
                     },
                 },
             },

@@ -25,21 +25,25 @@ public class GetEventDetailsService implements GetEventDetailsQuery {
     private final UserRepositoryPort userRepository;
     private final AssignmentRepositoryPort assignmentRepository;
     private final TaskRepositoryPort taskRepository;
+    private final EventResponseDtoMapper eventResponseDtoMapper;
 
     public GetEventDetailsService(
             final EventRepositoryPort eventRepository,
             final UserRepositoryPort userRepository,
             final AssignmentRepositoryPort assignmentRepository,
-            final TaskRepositoryPort taskRepository
+            final TaskRepositoryPort taskRepository,
+            final EventResponseDtoMapper eventResponseDtoMapper
     ) {
         DomainAssert.notNull(eventRepository, "Репозиторий мероприятий обязателен", "EVENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(assignmentRepository, "Репозиторий назначений обязателен", "ASSIGNMENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(eventResponseDtoMapper, "Маппер ответа по мероприятию обязателен", "EVENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.taskRepository = taskRepository;
+        this.eventResponseDtoMapper = eventResponseDtoMapper;
     }
 
     @Override
@@ -59,6 +63,6 @@ public class GetEventDetailsService implements GetEventDetailsQuery {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         final long tasks = taskRepository.countTasksForEvent(eventId);
-        return Optional.of(EventResponseDto.from(event, tasks));
+        return Optional.of(eventResponseDtoMapper.toResponse(event, tasks));
     }
 }

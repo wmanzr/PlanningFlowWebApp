@@ -30,18 +30,26 @@ public class GetMyTasksService implements GetMyTasksQuery {
     private final TaskRepositoryPort taskRepository;
     private final UserRepositoryPort userRepository;
     private final AssignmentRepositoryPort assignmentRepository;
+    private final TaskResponseDtoMapper taskResponseDtoMapper;
+    private final TaskAssignmentResponseDtoMapper taskAssignmentResponseDtoMapper;
 
     public GetMyTasksService(
             final TaskRepositoryPort taskRepository,
             final UserRepositoryPort userRepository,
-            final AssignmentRepositoryPort assignmentRepository
+            final AssignmentRepositoryPort assignmentRepository,
+            final TaskResponseDtoMapper taskResponseDtoMapper,
+            final TaskAssignmentResponseDtoMapper taskAssignmentResponseDtoMapper
     ) {
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(assignmentRepository, "Репозиторий назначений обязателен", "ASSIGNMENT_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(taskResponseDtoMapper, "Маппер ответа по задаче обязателен", "TASK_RESPONSE_DTO_MAPPER_REQUIRED");
+        DomainAssert.notNull(taskAssignmentResponseDtoMapper, "Маппер ответа по назначению обязателен", "TASK_ASSIGNMENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
+        this.taskResponseDtoMapper = taskResponseDtoMapper;
+        this.taskAssignmentResponseDtoMapper = taskAssignmentResponseDtoMapper;
     }
 
     @Override
@@ -79,9 +87,9 @@ public class GetMyTasksService implements GetMyTasksQuery {
         for (final Task t : page.items()) {
             final TaskAssignmentResponseDto viewerAssignment =
                     assignmentRepository.findLatestForTaskAndUser(t.getId(), userId)
-                            .map(TaskAssignmentResponseDto::from)
+                            .map(taskAssignmentResponseDtoMapper::toResponse)
                             .orElse(null);
-            items.add(TaskResponseDto.from(t, List.of(), null, viewerAssignment));
+            items.add(taskResponseDtoMapper.toResponse(t, List.of(), null, viewerAssignment));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

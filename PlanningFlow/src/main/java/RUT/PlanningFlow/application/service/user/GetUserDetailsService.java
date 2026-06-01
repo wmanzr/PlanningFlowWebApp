@@ -28,24 +28,28 @@ public class GetUserDetailsService implements GetUserDetailsQuery {
     private final EventRepositoryPort eventRepository;
     private final TaskRepositoryPort taskRepository;
     private final ResourceBookingRepositoryPort resourceBookingRepository;
+    private final UserResponseDtoMapper userResponseDtoMapper;
 
     public GetUserDetailsService(
             final UserRepositoryPort userRepository,
             final AssignmentRepositoryPort assignmentRepository,
             final EventRepositoryPort eventRepository,
             final TaskRepositoryPort taskRepository,
-            final ResourceBookingRepositoryPort resourceBookingRepository
+            final ResourceBookingRepositoryPort resourceBookingRepository,
+            final UserResponseDtoMapper userResponseDtoMapper
     ) {
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(assignmentRepository, "Репозиторий назначений обязателен", "ASSIGNMENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(eventRepository, "Репозиторий мероприятий обязателен", "EVENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
         DomainAssert.notNull(resourceBookingRepository, "Репозиторий бронирований обязателен", "BOOKING_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(userResponseDtoMapper, "Маппер ответа по пользователю обязателен", "USER_RESPONSE_DTO_MAPPER_REQUIRED");
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.eventRepository = eventRepository;
         this.taskRepository = taskRepository;
         this.resourceBookingRepository = resourceBookingRepository;
+        this.userResponseDtoMapper = userResponseDtoMapper;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class GetUserDetailsService implements GetUserDetailsQuery {
             return Optional.empty();
         }
         final UserProfileActivityStatsDto stats = buildActivityStats(user.get());
-        return Optional.of(UserResponseDto.from(user.get(), stats));
+        return Optional.of(userResponseDtoMapper.toResponse(user.get(), stats));
     }
 
     private UserProfileActivityStatsDto buildActivityStats(final User user) {

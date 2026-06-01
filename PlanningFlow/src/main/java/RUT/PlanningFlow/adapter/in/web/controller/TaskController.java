@@ -4,6 +4,7 @@ import RUT.PlanningFlow.adapter.in.web.dto.resource.TaskAllocateResourcesRequest
 import RUT.PlanningFlow.adapter.in.web.dto.task.TaskAssignRequest;
 import RUT.PlanningFlow.adapter.in.web.dto.task.TaskCreateRequest;
 import RUT.PlanningFlow.adapter.in.web.dto.task.TaskMatchRequest;
+import RUT.PlanningFlow.adapter.in.web.mapping.TaskMatchRequestMapper;
 import RUT.PlanningFlow.adapter.in.web.dto.task.TaskUpdateRequest;
 import RUT.PlanningFlow.application.dto.matching.MatchTaskResponseDto;
 import RUT.PlanningFlow.application.dto.resource.ReserveResourcesResponseDto;
@@ -260,7 +261,7 @@ public class TaskController {
         final MatchTaskResponseDto result = matchTaskUseCase.execute(
                 principal.userId(),
                 taskId,
-                request.toEventMode(),
+                TaskMatchRequestMapper.toEventMode(request),
                 request.getRequiredCount()
         );
         return ResponseEntity.ok(result);

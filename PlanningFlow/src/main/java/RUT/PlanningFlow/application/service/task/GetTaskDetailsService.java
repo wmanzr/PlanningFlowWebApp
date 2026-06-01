@@ -27,18 +27,26 @@ public class GetTaskDetailsService implements GetTaskDetailsQuery {
     private final TaskRepositoryPort taskRepository;
     private final UserRepositoryPort userRepository;
     private final AssignmentRepositoryPort assignmentRepository;
+    private final TaskResponseDtoMapper taskResponseDtoMapper;
+    private final TaskAssignmentResponseDtoMapper taskAssignmentResponseDtoMapper;
 
     public GetTaskDetailsService(
             final TaskRepositoryPort taskRepository,
             final UserRepositoryPort userRepository,
-            final AssignmentRepositoryPort assignmentRepository
+            final AssignmentRepositoryPort assignmentRepository,
+            final TaskResponseDtoMapper taskResponseDtoMapper,
+            final TaskAssignmentResponseDtoMapper taskAssignmentResponseDtoMapper
     ) {
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(assignmentRepository, "Репозиторий назначений обязателен", "ASSIGNMENT_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(taskResponseDtoMapper, "Маппер ответа по задаче обязателен", "TASK_RESPONSE_DTO_MAPPER_REQUIRED");
+        DomainAssert.notNull(taskAssignmentResponseDtoMapper, "Маппер ответа по назначению обязателен", "TASK_ASSIGNMENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
+        this.taskResponseDtoMapper = taskResponseDtoMapper;
+        this.taskAssignmentResponseDtoMapper = taskAssignmentResponseDtoMapper;
     }
 
     @Override
@@ -59,12 +67,12 @@ public class GetTaskDetailsService implements GetTaskDetailsQuery {
         final List<Assignment> assignmentRows = assignmentRepository.findByTaskId(taskId);
         final List<TaskAssignmentResponseDto> assignmentDtos = new ArrayList<>();
         for (final Assignment a : assignmentRows) {
-            final TaskAssignmentResponseDto dto = TaskAssignmentResponseDto.from(a);
+            final TaskAssignmentResponseDto dto = taskAssignmentResponseDtoMapper.toResponse(a);
             if (dto != null) {
                 assignmentDtos.add(dto);
             }
         }
-        final int requiredSlots = TaskResponseDto.countActiveAssignmentSlots(assignmentDtos);
-        return Optional.of(TaskResponseDto.from(task, assignmentDtos, requiredSlots));
+        final int requiredSlots = taskResponseDtoMapper.countActiveAssignmentSlots(assignmentDtos);
+        return Optional.of(taskResponseDtoMapper.toResponse(task, assignmentDtos, requiredSlots));
     }
 }

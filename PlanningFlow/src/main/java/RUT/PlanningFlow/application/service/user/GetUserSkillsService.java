@@ -20,10 +20,16 @@ import java.util.List;
 public class GetUserSkillsService implements GetUserSkillsQuery {
 
     private final UserRepositoryPort userRepository;
+    private final UserSkillResponseDtoMapper userSkillResponseDtoMapper;
 
-    public GetUserSkillsService(final UserRepositoryPort userRepository) {
+    public GetUserSkillsService(
+            final UserRepositoryPort userRepository,
+            final UserSkillResponseDtoMapper userSkillResponseDtoMapper
+    ) {
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(userSkillResponseDtoMapper, "Маппер ответа по навыку пользователя обязателен", "USER_SKILL_RESPONSE_DTO_MAPPER_REQUIRED");
         this.userRepository = userRepository;
+        this.userSkillResponseDtoMapper = userSkillResponseDtoMapper;
     }
 
     @Override
@@ -38,7 +44,7 @@ public class GetUserSkillsService implements GetUserSkillsQuery {
         final List<UserSkill> skills = userRepository.findSkillsForUser(userId);
         final List<UserSkillResponseDto> items = new ArrayList<>(skills.size());
         for (final UserSkill us : skills) {
-            items.add(UserSkillResponseDto.from(us));
+            items.add(userSkillResponseDtoMapper.toResponse(us));
         }
         return List.copyOf(items);
     }

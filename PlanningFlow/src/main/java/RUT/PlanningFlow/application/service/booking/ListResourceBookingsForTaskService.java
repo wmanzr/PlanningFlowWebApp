@@ -10,7 +10,6 @@ import RUT.PlanningFlow.domain.utils.DomainAssert;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,10 +17,16 @@ import java.util.List;
 public class ListResourceBookingsForTaskService implements ListResourceBookingsForTaskQuery {
 
     private final ResourceBookingRepositoryPort bookingRepository;
+    private final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper;
 
-    public ListResourceBookingsForTaskService(final ResourceBookingRepositoryPort bookingRepository) {
+    public ListResourceBookingsForTaskService(
+            final ResourceBookingRepositoryPort bookingRepository,
+            final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper
+    ) {
         DomainAssert.notNull(bookingRepository, "Репозиторий бронирований обязателен", "RESOURCE_BOOKING_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(resourceBookingResponseDtoMapper, "Маппер ответа по бронированию обязателен", "RESOURCE_BOOKING_RESPONSE_DTO_MAPPER_REQUIRED");
         this.bookingRepository = bookingRepository;
+        this.resourceBookingResponseDtoMapper = resourceBookingResponseDtoMapper;
     }
 
     @Override
@@ -30,10 +35,7 @@ public class ListResourceBookingsForTaskService implements ListResourceBookingsF
         DomainAssert.notNull(pageQuery, "Параметры пагинации обязательны", "PAGE_QUERY_REQUIRED");
 
         final PageResult<ResourceBooking> page = bookingRepository.findByTaskId(taskId, pageQuery);
-        final List<ResourceBookingResponseDto> items = new ArrayList<>(page.items().size());
-        for (final ResourceBooking b : page.items()) {
-            items.add(ResourceBookingResponseDto.from(b));
-        }
+        final List<ResourceBookingResponseDto> items = resourceBookingResponseDtoMapper.toResponses(page.items());
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }
 }

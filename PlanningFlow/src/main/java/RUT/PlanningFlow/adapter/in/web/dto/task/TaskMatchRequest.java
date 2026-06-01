@@ -1,14 +1,9 @@
 package RUT.PlanningFlow.adapter.in.web.dto.task;
 
 import RUT.PlanningFlow.domain.enums.MatchingMode;
-import RUT.PlanningFlow.domain.vo.EventMode;
-import RUT.PlanningFlow.domain.vo.MatchingDistance;
-import RUT.PlanningFlow.domain.vo.WorkloadPolicy;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-
-import java.time.Duration;
 
 public class TaskMatchRequest {
 
@@ -33,22 +28,6 @@ public class TaskMatchRequest {
             return true;
         }
         return maxDailyLoadMinutes != null && minTechnicalGapMinutes != null;
-    }
-
-    public EventMode toEventMode() {
-        final double radius = geoReferenceRadiusMeters != null
-                ? geoReferenceRadiusMeters
-                : MatchingDistance.CITY_SCALE.referenceRadiusMeters();
-        final WorkloadPolicy workloadPolicy;
-        if (maxDailyLoadMinutes != null && minTechnicalGapMinutes != null) {
-            workloadPolicy = new WorkloadPolicy(
-                    Duration.ofMinutes(maxDailyLoadMinutes),
-                    Duration.ofMinutes(minTechnicalGapMinutes)
-            );
-        } else {
-            workloadPolicy = WorkloadPolicy.defaults();
-        }
-        return new EventMode(matchingMode, new MatchingDistance(radius), workloadPolicy);
     }
 
     public Integer getRequiredCount() {

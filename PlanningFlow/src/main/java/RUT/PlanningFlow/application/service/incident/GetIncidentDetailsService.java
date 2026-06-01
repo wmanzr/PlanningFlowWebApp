@@ -14,15 +14,21 @@ import java.util.Optional;
 public class GetIncidentDetailsService implements GetIncidentDetailsQuery {
 
     private final IncidentRepositoryPort incidentRepository;
+    private final IncidentResponseDtoMapper incidentResponseDtoMapper;
 
-    public GetIncidentDetailsService(final IncidentRepositoryPort incidentRepository) {
+    public GetIncidentDetailsService(
+            final IncidentRepositoryPort incidentRepository,
+            final IncidentResponseDtoMapper incidentResponseDtoMapper
+    ) {
         DomainAssert.notNull(incidentRepository, "Репозиторий инцидентов обязателен", "INCIDENT_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(incidentResponseDtoMapper, "Маппер ответа по инциденту обязателен", "INCIDENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.incidentRepository = incidentRepository;
+        this.incidentResponseDtoMapper = incidentResponseDtoMapper;
     }
 
     @Override
     public Optional<IncidentResponseDto> execute(final Integer incidentId) {
         DomainAssert.notNull(incidentId, "ID инцидента обязателен", "INCIDENT_ID_REQUIRED");
-        return incidentRepository.findById(incidentId).map(IncidentResponseDto::from);
+        return incidentRepository.findById(incidentId).map(incidentResponseDtoMapper::toResponse);
     }
 }

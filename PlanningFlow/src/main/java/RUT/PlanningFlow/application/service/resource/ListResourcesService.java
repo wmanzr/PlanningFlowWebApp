@@ -20,10 +20,16 @@ import java.util.List;
 public class ListResourcesService implements ListResourcesQuery {
 
     private final InternalResourceRepositoryPort internalResourceRepository;
+    private final ResourceResponseDtoMapper resourceResponseDtoMapper;
 
-    public ListResourcesService(final InternalResourceRepositoryPort internalResourceRepository) {
+    public ListResourcesService(
+            final InternalResourceRepositoryPort internalResourceRepository,
+            final ResourceResponseDtoMapper resourceResponseDtoMapper
+    ) {
         DomainAssert.notNull(internalResourceRepository, "Репозиторий внутренних ресурсов обязателен", "INTERNAL_RESOURCE_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(resourceResponseDtoMapper, "Маппер ответа по ресурсу обязателен", "RESOURCE_RESPONSE_DTO_MAPPER_REQUIRED");
         this.internalResourceRepository = internalResourceRepository;
+        this.resourceResponseDtoMapper = resourceResponseDtoMapper;
     }
 
     @Override
@@ -40,7 +46,7 @@ public class ListResourcesService implements ListResourcesQuery {
 
         final List<InternalResourceResponseDto> items = new ArrayList<>(page.items().size());
         for (final InternalResource r : page.items()) {
-            items.add(InternalResourceResponseDto.from(r));
+            items.add(resourceResponseDtoMapper.toInternal(r));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

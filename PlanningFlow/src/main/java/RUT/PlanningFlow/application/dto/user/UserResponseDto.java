@@ -1,11 +1,8 @@
 package RUT.PlanningFlow.application.dto.user;
 
 import RUT.PlanningFlow.domain.enums.UserRoles;
-import RUT.PlanningFlow.domain.model.Role;
-import RUT.PlanningFlow.domain.model.User;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class UserResponseDto {
@@ -57,40 +54,6 @@ public final class UserResponseDto {
         this.organizerEventsCreatedCount = organizerEventsCreatedCount;
         this.organizerTasksCreatedCount = organizerTasksCreatedCount;
         this.organizerBookingsCreatedCount = organizerBookingsCreatedCount;
-    }
-
-    public static UserResponseDto from(final User user) {
-        return from(user, UserProfileActivityStatsDto.zero());
-    }
-
-    public static UserResponseDto from(final User user, final UserProfileActivityStatsDto stats) {
-        if (user == null) {
-            return null;
-        }
-        final UserProfileActivityStatsDto s = stats == null ? UserProfileActivityStatsDto.zero() : stats;
-        final List<UserRoles> roleNames = new ArrayList<>();
-        for (final Role r : user.getRoles()) {
-            if (r != null && r.getName() != null) {
-                roleNames.add(r.getName());
-            }
-        }
-        return new UserResponseDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getBirthDate(),
-                roleNames,
-                s.completedTasksCount(),
-                s.eventsParticipatedCount(),
-                s.totalWorkedHours(),
-                s.coordinatorCompletedEventsCount(),
-                s.coordinatorTasksCreatedCount(),
-                s.coordinatorBookingsCreatedCount(),
-                s.organizerEventsCreatedCount(),
-                s.organizerTasksCreatedCount(),
-                s.organizerBookingsCreatedCount()
-        );
     }
 
     public Integer getId() {

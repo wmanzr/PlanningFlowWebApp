@@ -14,15 +14,21 @@ import java.util.Optional;
 public class GetResourceBookingDetailsService implements GetResourceBookingDetailsQuery {
 
     private final ResourceBookingRepositoryPort bookingRepository;
+    private final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper;
 
-    public GetResourceBookingDetailsService(final ResourceBookingRepositoryPort bookingRepository) {
+    public GetResourceBookingDetailsService(
+            final ResourceBookingRepositoryPort bookingRepository,
+            final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper
+    ) {
         DomainAssert.notNull(bookingRepository, "Репозиторий бронирований обязателен", "RESOURCE_BOOKING_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(resourceBookingResponseDtoMapper, "Маппер ответа по бронированию обязателен", "RESOURCE_BOOKING_RESPONSE_DTO_MAPPER_REQUIRED");
         this.bookingRepository = bookingRepository;
+        this.resourceBookingResponseDtoMapper = resourceBookingResponseDtoMapper;
     }
 
     @Override
     public Optional<ResourceBookingResponseDto> execute(final Integer bookingId) {
         DomainAssert.notNull(bookingId, "ID бронирования обязателен", "BOOKING_ID_REQUIRED");
-        return bookingRepository.findById(bookingId).map(ResourceBookingResponseDto::from);
+        return bookingRepository.findById(bookingId).map(resourceBookingResponseDtoMapper::toResponse);
     }
 }

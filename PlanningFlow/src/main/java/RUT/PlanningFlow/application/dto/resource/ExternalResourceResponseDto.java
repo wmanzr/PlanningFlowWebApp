@@ -1,7 +1,6 @@
 package RUT.PlanningFlow.application.dto.resource;
 
 import RUT.PlanningFlow.domain.enums.ResourceType;
-import RUT.PlanningFlow.domain.model.ExternalResource;
 
 public final class ExternalResourceResponseDto {
     private final Integer id;
@@ -22,19 +21,6 @@ public final class ExternalResourceResponseDto {
         this.type = type;
         this.externalApiId = externalApiId;
         this.operational = operational;
-    }
-
-    public static ExternalResourceResponseDto from(final ExternalResource resource) {
-        if (resource == null) {
-            return null;
-        }
-        return new ExternalResourceResponseDto(
-                resource.getId(),
-                resource.getName(),
-                resource.getType(),
-                resource.getExternalApiId(),
-                resource.isOperational()
-        );
     }
 
     public Integer getId() { return id; }

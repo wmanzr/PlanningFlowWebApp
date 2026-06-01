@@ -21,15 +21,19 @@ public class GetResourceDetailsService implements GetResourceDetailsQuery {
 
     private final InternalResourceRepositoryPort internalResourceRepository;
     private final ExternalResourceRepositoryPort externalResourceRepository;
+    private final ResourceResponseDtoMapper resourceResponseDtoMapper;
 
     public GetResourceDetailsService(
             final InternalResourceRepositoryPort internalResourceRepository,
-            final ExternalResourceRepositoryPort externalResourceRepository
+            final ExternalResourceRepositoryPort externalResourceRepository,
+            final ResourceResponseDtoMapper resourceResponseDtoMapper
     ) {
         DomainAssert.notNull(internalResourceRepository, "Репозиторий внутренних ресурсов обязателен", "INTERNAL_RESOURCE_REPOSITORY_REQUIRED");
         DomainAssert.notNull(externalResourceRepository, "Репозиторий внешних ресурсов обязателен", "EXTERNAL_RESOURCE_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(resourceResponseDtoMapper, "Маппер ответа по ресурсу обязателен", "RESOURCE_RESPONSE_DTO_MAPPER_REQUIRED");
         this.internalResourceRepository = internalResourceRepository;
         this.externalResourceRepository = externalResourceRepository;
+        this.resourceResponseDtoMapper = resourceResponseDtoMapper;
     }
 
     @Override
@@ -41,13 +45,13 @@ public class GetResourceDetailsService implements GetResourceDetailsQuery {
     public Optional<InternalResourceResponseDto> execute(final Integer resourceId) {
         DomainAssert.notNull(resourceId, "ID ресурса обязателен", "RESOURCE_ID_REQUIRED");
         final Optional<InternalResource> exResource = internalResourceRepository.findById(resourceId);
-        return exResource.map(InternalResourceResponseDto::from);
+        return exResource.map(resourceResponseDtoMapper::toInternal);
     }
 
     @Override
     public Optional<ExternalResourceResponseDto> executeExternal(final Integer resourceId) {
         DomainAssert.notNull(resourceId, "ID ресурса обязателен", "RESOURCE_ID_REQUIRED");
         final Optional<ExternalResource> exResource = externalResourceRepository.findById(resourceId);
-        return exResource.map(ExternalResourceResponseDto::from);
+        return exResource.map(resourceResponseDtoMapper::toExternal);
     }
 }

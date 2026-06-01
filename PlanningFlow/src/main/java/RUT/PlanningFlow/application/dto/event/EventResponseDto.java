@@ -1,11 +1,8 @@
 package RUT.PlanningFlow.application.dto.event;
 
 import RUT.PlanningFlow.domain.enums.EventStatus;
-import RUT.PlanningFlow.domain.model.Event;
-import RUT.PlanningFlow.domain.model.User;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class EventResponseDto {
@@ -45,41 +42,6 @@ public final class EventResponseDto {
         this.creatorId = creatorId;
         this.coordinatorIds = coordinatorIds == null ? List.of() : List.copyOf(coordinatorIds);
         this.tasksCount = tasksCount;
-    }
-
-    public static EventResponseDto from(final Event event) {
-        return from(event, 0L);
-    }
-
-    public static EventResponseDto from(final Event event, final long tasksCount) {
-        if (event == null) {
-            return null;
-        }
-
-        final List<Integer> coordinatorIds = new ArrayList<>();
-        final List<User> coordinators = event.getCoordinators();
-        if (coordinators != null) {
-            for (final User u : coordinators) {
-                if (u != null && u.getId() != null) {
-                    coordinatorIds.add(u.getId());
-                }
-            }
-        }
-
-        final User creator = event.getCreator();
-        return new EventResponseDto(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getStatus(),
-                event.getStartDate(),
-                event.getEndDate(),
-                event.getLatitude(),
-                event.getLongitude(),
-                creator == null ? null : creator.getId(),
-                coordinatorIds,
-                tasksCount
-        );
     }
 
     public Integer getId() { return id; }

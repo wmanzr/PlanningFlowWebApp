@@ -1,7 +1,6 @@
 package RUT.PlanningFlow.application.dto.resource;
 
 import RUT.PlanningFlow.domain.enums.ResourceType;
-import RUT.PlanningFlow.domain.model.InternalResource;
 
 public final class InternalResourceResponseDto {
     private final Integer id;
@@ -22,19 +21,6 @@ public final class InternalResourceResponseDto {
         this.type = type;
         this.inventoryNumber = inventoryNumber;
         this.operational = operational;
-    }
-
-    public static InternalResourceResponseDto from(final InternalResource resource) {
-        if (resource == null) {
-            return null;
-        }
-        return new InternalResourceResponseDto(
-                resource.getId(),
-                resource.getName(),
-                resource.getType(),
-                resource.getInventoryNumber(),
-                resource.isOperational()
-        );
     }
 
     public Integer getId() { return id; }

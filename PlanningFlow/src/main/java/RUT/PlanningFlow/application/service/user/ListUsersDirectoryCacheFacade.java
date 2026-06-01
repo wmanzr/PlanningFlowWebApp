@@ -26,10 +26,16 @@ public class ListUsersDirectoryCacheFacade {
     );
 
     private final UserRepositoryPort userRepository;
+    private final UserResponseDtoMapper userResponseDtoMapper;
 
-    public ListUsersDirectoryCacheFacade(final UserRepositoryPort userRepository) {
+    public ListUsersDirectoryCacheFacade(
+            final UserRepositoryPort userRepository,
+            final UserResponseDtoMapper userResponseDtoMapper
+    ) {
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(userResponseDtoMapper, "Маппер ответа по пользователю обязателен", "USER_RESPONSE_DTO_MAPPER_REQUIRED");
         this.userRepository = userRepository;
+        this.userResponseDtoMapper = userResponseDtoMapper;
     }
 
     @Cacheable(
@@ -54,7 +60,7 @@ public class ListUsersDirectoryCacheFacade {
 
         final List<UserResponseDto> items = new ArrayList<>(page.items().size());
         for (final User u : page.items()) {
-            items.add(UserResponseDto.from(u));
+            items.add(userResponseDtoMapper.toResponse(u));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

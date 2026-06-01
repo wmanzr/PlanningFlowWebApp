@@ -18,10 +18,16 @@ import java.util.List;
 public class GetIncidentsForEventService implements GetIncidentsForEventQuery {
 
     private final IncidentRepositoryPort incidentRepository;
+    private final IncidentResponseDtoMapper incidentResponseDtoMapper;
 
-    public GetIncidentsForEventService(final IncidentRepositoryPort incidentRepository) {
+    public GetIncidentsForEventService(
+            final IncidentRepositoryPort incidentRepository,
+            final IncidentResponseDtoMapper incidentResponseDtoMapper
+    ) {
         DomainAssert.notNull(incidentRepository, "Репозиторий инцидентов обязателен", "INCIDENT_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(incidentResponseDtoMapper, "Маппер ответа по инциденту обязателен", "INCIDENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.incidentRepository = incidentRepository;
+        this.incidentResponseDtoMapper = incidentResponseDtoMapper;
     }
 
     @Override
@@ -33,7 +39,7 @@ public class GetIncidentsForEventService implements GetIncidentsForEventQuery {
 
         final List<IncidentResponseDto> items = new ArrayList<>(page.items().size());
         for (final Incident i : page.items()) {
-            items.add(IncidentResponseDto.from(i));
+            items.add(incidentResponseDtoMapper.toResponse(i));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

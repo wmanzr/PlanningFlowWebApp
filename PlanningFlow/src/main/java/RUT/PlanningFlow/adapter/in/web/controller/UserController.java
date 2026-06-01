@@ -2,7 +2,9 @@ package RUT.PlanningFlow.adapter.in.web.controller;
 
 import RUT.PlanningFlow.adapter.in.web.dto.user.AssignmentRejectRequest;
 import RUT.PlanningFlow.adapter.in.web.dto.user.UserProfileUpdateRequest;
+import RUT.PlanningFlow.adapter.in.web.dto.user.UserSkillTierItem;
 import RUT.PlanningFlow.adapter.in.web.dto.user.UserSkillsUpdateRequest;
+import RUT.PlanningFlow.adapter.in.web.security.JwtPrincipal;
 import RUT.PlanningFlow.application.dto.user.UserResponseDto;
 import RUT.PlanningFlow.application.dto.user.UserSkillResponseDto;
 import RUT.PlanningFlow.application.dto.user.UserViewerContextDto;
@@ -16,7 +18,7 @@ import RUT.PlanningFlow.application.port.in.user.ListUsersQuery;
 import RUT.PlanningFlow.application.port.in.user.ManageUserSkillsUseCase;
 import RUT.PlanningFlow.application.port.in.user.RejectAssignmentUseCase;
 import RUT.PlanningFlow.application.port.in.user.UpdateProfileUseCase;
-import RUT.PlanningFlow.adapter.in.web.security.JwtPrincipal;
+import RUT.PlanningFlow.domain.enums.SkillTier;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,7 +39,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -147,7 +151,7 @@ public class UserController {
             @PathVariable final Integer userId,
             @Valid @RequestBody final UserSkillsUpdateRequest request
     ) {
-        final List<Integer> createdIds = manageUserSkillsUseCase.execute(userId, request.toTierMap());
+        final List<Integer> createdIds = manageUserSkillsUseCase.execute(userId, skillTiersToMap(request));
         return ResponseEntity.ok(createdIds);
     }
 
@@ -166,6 +170,18 @@ public class UserController {
     ) {
         rejectAssignmentUseCase.execute(assignmentId, request.getReason());
         return ResponseEntity.noContent().build();
+    }
+
+    private static Map<Integer, SkillTier> skillTiersToMap(final UserSkillsUpdateRequest request) {
+        final List<UserSkillTierItem> tiers = request.getSkillTiers();
+        if (tiers == null || tiers.isEmpty()) {
+            return Map.of();
+        }
+        final Map<Integer, SkillTier> map = new LinkedHashMap<>();
+        for (final UserSkillTierItem item : tiers) {
+            map.put(item.getSkillId(), item.getTier());
+        }
+        return map;
     }
 
     private static String blankToNull(final String value) {

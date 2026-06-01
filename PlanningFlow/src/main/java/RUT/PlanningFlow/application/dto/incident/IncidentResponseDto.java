@@ -2,11 +2,6 @@ package RUT.PlanningFlow.application.dto.incident;
 
 import RUT.PlanningFlow.domain.enums.IncidentSeverity;
 import RUT.PlanningFlow.domain.enums.IncidentStatus;
-import RUT.PlanningFlow.domain.model.Event;
-import RUT.PlanningFlow.domain.model.Incident;
-import RUT.PlanningFlow.domain.model.Resource;
-import RUT.PlanningFlow.domain.model.Task;
-import RUT.PlanningFlow.domain.model.User;
 
 import java.time.LocalDateTime;
 
@@ -47,31 +42,6 @@ public final class IncidentResponseDto {
         this.createdAt = createdAt;
         this.resolvedAt = resolvedAt;
         this.resolutionNotes = resolutionNotes;
-    }
-
-    public static IncidentResponseDto from(final Incident incident) {
-        if (incident == null) {
-            return null;
-        }
-
-        final Event event = incident.getEvent();
-        final Task task = incident.getTask();
-        final Resource resource = incident.getResource();
-        final User reporter = incident.getReporter();
-
-        return new IncidentResponseDto(
-                incident.getId(),
-                event == null ? null : event.getId(),
-                task == null ? null : task.getId(),
-                resource == null ? null : resource.getId(),
-                reporter == null ? null : reporter.getId(),
-                incident.getDescription(),
-                incident.getSeverity(),
-                incident.getStatus(),
-                incident.getCreatedAt(),
-                incident.getResolvedAt(),
-                incident.getResolutionNotes()
-        );
     }
 
     public Integer getId() { return id; }

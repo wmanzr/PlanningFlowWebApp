@@ -28,18 +28,22 @@ public class ListEventsByDateRangeService implements ListEventsByDateRangeQuery 
     private final EventRepositoryPort eventRepository;
     private final UserRepositoryPort userRepository;
     private final TaskRepositoryPort taskRepository;
+    private final EventResponseDtoMapper eventResponseDtoMapper;
 
     public ListEventsByDateRangeService(
             final EventRepositoryPort eventRepository,
             final UserRepositoryPort userRepository,
-            final TaskRepositoryPort taskRepository
+            final TaskRepositoryPort taskRepository,
+            final EventResponseDtoMapper eventResponseDtoMapper
     ) {
         DomainAssert.notNull(eventRepository, "Репозиторий мероприятий обязателен", "EVENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(eventResponseDtoMapper, "Маппер ответа по мероприятию обязателен", "EVENT_RESPONSE_DTO_MAPPER_REQUIRED");
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
+        this.eventResponseDtoMapper = eventResponseDtoMapper;
     }
 
     @Override
@@ -129,7 +133,7 @@ public class ListEventsByDateRangeService implements ListEventsByDateRangeQuery 
         final List<EventResponseDto> items = new ArrayList<>(page.items().size());
         for (final Event e : page.items()) {
             final long tasks = taskRepository.countTasksForEvent(e.getId());
-            items.add(EventResponseDto.from(e, tasks));
+            items.add(eventResponseDtoMapper.toResponse(e, tasks));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

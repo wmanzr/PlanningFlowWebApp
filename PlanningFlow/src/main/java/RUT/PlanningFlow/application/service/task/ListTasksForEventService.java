@@ -30,21 +30,25 @@ public class ListTasksForEventService implements ListTasksForEventQuery {
     private final EventRepositoryPort eventRepository;
     private final UserRepositoryPort userRepository;
     private final AssignmentRepositoryPort assignmentRepository;
+    private final TaskResponseDtoMapper taskResponseDtoMapper;
 
     public ListTasksForEventService(
             final TaskRepositoryPort taskRepository,
             final EventRepositoryPort eventRepository,
             final UserRepositoryPort userRepository,
-            final AssignmentRepositoryPort assignmentRepository
+            final AssignmentRepositoryPort assignmentRepository,
+            final TaskResponseDtoMapper taskResponseDtoMapper
     ) {
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
         DomainAssert.notNull(eventRepository, "Репозиторий мероприятий обязателен", "EVENT_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(assignmentRepository, "Репозиторий назначений обязателен", "ASSIGNMENT_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(taskResponseDtoMapper, "Маппер ответа по задаче обязателен", "TASK_RESPONSE_DTO_MAPPER_REQUIRED");
         this.taskRepository = taskRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
+        this.taskResponseDtoMapper = taskResponseDtoMapper;
     }
 
     @Override
@@ -75,7 +79,7 @@ public class ListTasksForEventService implements ListTasksForEventQuery {
 
         final List<TaskResponseDto> items = new ArrayList<>(page.items().size());
         for (final Task t : page.items()) {
-            items.add(TaskResponseDto.from(t));
+            items.add(taskResponseDtoMapper.toResponse(t));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

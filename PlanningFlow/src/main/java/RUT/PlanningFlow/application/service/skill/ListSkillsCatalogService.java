@@ -20,10 +20,16 @@ import java.util.List;
 public class ListSkillsCatalogService implements ListSkillsCatalogQuery {
 
     private final SkillRepositoryPort skillRepository;
+    private final SkillResponseDtoMapper skillResponseDtoMapper;
 
-    public ListSkillsCatalogService(final SkillRepositoryPort skillRepository) {
+    public ListSkillsCatalogService(
+            final SkillRepositoryPort skillRepository,
+            final SkillResponseDtoMapper skillResponseDtoMapper
+    ) {
         DomainAssert.notNull(skillRepository, "Репозиторий навыков обязателен", "SKILL_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(skillResponseDtoMapper, "Маппер ответа по навыку обязателен", "SKILL_RESPONSE_DTO_MAPPER_REQUIRED");
         this.skillRepository = skillRepository;
+        this.skillResponseDtoMapper = skillResponseDtoMapper;
     }
 
     @Override
@@ -41,7 +47,7 @@ public class ListSkillsCatalogService implements ListSkillsCatalogQuery {
 
         final List<SkillResponseDto> items = new ArrayList<>(page.items().size());
         for (final Skill s : page.items()) {
-            items.add(SkillResponseDto.from(s));
+            items.add(skillResponseDtoMapper.toResponse(s));
         }
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }

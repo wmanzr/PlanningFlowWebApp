@@ -12,7 +12,6 @@ import RUT.PlanningFlow.domain.utils.DomainAssert;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,10 +23,16 @@ public class ListResourceBookingsForEventService implements ListResourceBookings
     private static final List<BookingStatus> ALL_STATUSES = List.copyOf(Arrays.asList(BookingStatus.values()));
 
     private final ResourceBookingRepositoryPort bookingRepository;
+    private final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper;
 
-    public ListResourceBookingsForEventService(final ResourceBookingRepositoryPort bookingRepository) {
+    public ListResourceBookingsForEventService(
+            final ResourceBookingRepositoryPort bookingRepository,
+            final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper
+    ) {
         DomainAssert.notNull(bookingRepository, "Репозиторий бронирований обязателен", "RESOURCE_BOOKING_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(resourceBookingResponseDtoMapper, "Маппер ответа по бронированию обязателен", "RESOURCE_BOOKING_RESPONSE_DTO_MAPPER_REQUIRED");
         this.bookingRepository = bookingRepository;
+        this.resourceBookingResponseDtoMapper = resourceBookingResponseDtoMapper;
     }
 
     @Override
@@ -51,10 +56,7 @@ public class ListResourceBookingsForEventService implements ListResourceBookings
                 effectiveStatuses,
                 resourceType
         );
-        final List<ResourceBookingResponseDto> items = new ArrayList<>(page.items().size());
-        for (final ResourceBooking b : page.items()) {
-            items.add(ResourceBookingResponseDto.from(b));
-        }
+        final List<ResourceBookingResponseDto> items = resourceBookingResponseDtoMapper.toResponses(page.items());
         return new PageResult<>(items, page.totalElements(), page.totalPages());
     }
 }

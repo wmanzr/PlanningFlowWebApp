@@ -1,7 +1,6 @@
 package RUT.PlanningFlow.application.service.task;
 
 import RUT.PlanningFlow.application.dto.resource.ReserveResourcesResponseDto;
-import RUT.PlanningFlow.application.dto.resource.ResourceBookingResponseDto;
 import RUT.PlanningFlow.application.port.in.task.AllocateTaskResourcesUseCase;
 import RUT.PlanningFlow.application.port.out.EquipmentRentalPort;
 import RUT.PlanningFlow.application.port.out.InternalResourceWarehousePort;
@@ -11,6 +10,7 @@ import RUT.PlanningFlow.application.port.out.repository.ResourceBookingRepositor
 import RUT.PlanningFlow.application.port.out.repository.TaskRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.application.security.PlanningAccessPolicy;
+import RUT.PlanningFlow.application.service.booking.ResourceBookingResponseDtoMapper;
 import RUT.PlanningFlow.domain.enums.BookingStatus;
 import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.exception.DomainException;
@@ -51,6 +51,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
     private final ResourceBookingRepositoryPort bookingRepository;
     private final UserRepositoryPort userRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper;
 
     private record Phase1Result(List<ResourceBooking> allCreated, List<ResourceBooking> pendingExternals) {}
 
@@ -62,7 +63,8 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
             final ExternalResourceRepositoryPort externalResourceRepository,
             final ResourceBookingRepositoryPort bookingRepository,
             final UserRepositoryPort userRepository,
-            final TransactionTemplate transactionTemplate
+            final TransactionTemplate transactionTemplate,
+            final ResourceBookingResponseDtoMapper resourceBookingResponseDtoMapper
     ) {
         DomainAssert.notNull(taskRepository, "Репозиторий задач обязателен", "TASK_REPOSITORY_REQUIRED");
         DomainAssert.notNull(internalWarehouse, "Внутренний склад обязателен", "INTERNAL_WAREHOUSE_REQUIRED");
@@ -72,6 +74,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
         DomainAssert.notNull(bookingRepository, "Репозиторий бронирований обязателен", "RESOURCE_BOOKING_REPOSITORY_REQUIRED");
         DomainAssert.notNull(userRepository, "Репозиторий пользователей обязателен", "USER_REPOSITORY_REQUIRED");
         DomainAssert.notNull(transactionTemplate, "TransactionTemplate обязателен", "TRANSACTION_TEMPLATE_REQUIRED");
+        DomainAssert.notNull(resourceBookingResponseDtoMapper, "Маппер ответа по бронированию обязателен", "RESOURCE_BOOKING_RESPONSE_DTO_MAPPER_REQUIRED");
         this.taskRepository = taskRepository;
         this.internalWarehouse = internalWarehouse;
         this.transportLogistics = transportLogistics;
@@ -80,6 +83,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.transactionTemplate = transactionTemplate;
+        this.resourceBookingResponseDtoMapper = resourceBookingResponseDtoMapper;
     }
 
     @Override
@@ -168,7 +172,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
                     finalBookings.add(bookingRepository.findById(b.getId()).orElse(b));
                 }
             }
-            return new ReserveResourcesResponseDto(taskId, type, requiredCount, toResponseDtos(finalBookings));
+            return new ReserveResourcesResponseDto(taskId, type, requiredCount, resourceBookingResponseDtoMapper.toResponses(finalBookings));
         }
 
         final DateTimeRange asyncWindow = new DateTimeRange(reservedFrom, reservedTo);
@@ -205,7 +209,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
             }
         });
 
-        return new ReserveResourcesResponseDto(taskId, type, requiredCount, toResponseDtos(phase1.allCreated()));
+        return new ReserveResourcesResponseDto(taskId, type, requiredCount, resourceBookingResponseDtoMapper.toResponses(phase1.allCreated()));
     }
 
     private void confirmPendingBooking(final Integer bookingId, final String realApiId) {
@@ -268,23 +272,6 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
 
     private static boolean isActive(final BookingStatus status) {
         return status == BookingStatus.REQUESTED || status == BookingStatus.CONFIRMED;
-    }
-
-    private static List<ResourceBookingResponseDto> toResponseDtos(final List<ResourceBooking> bookings) {
-        if (bookings == null || bookings.isEmpty()) {
-            return List.of();
-        }
-        final List<ResourceBookingResponseDto> dtos = new ArrayList<>(bookings.size());
-        for (final ResourceBooking b : bookings) {
-            if (b == null) {
-                continue;
-            }
-            final ResourceBookingResponseDto dto = ResourceBookingResponseDto.from(b);
-            if (dto != null) {
-                dtos.add(dto);
-            }
-        }
-        return List.copyOf(dtos);
     }
 
     private static <T> List<T> safeList(final List<T> value) {

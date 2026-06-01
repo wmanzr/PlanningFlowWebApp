@@ -17,10 +17,16 @@ import java.util.Optional;
 public class GetSkillDetailsService implements GetSkillDetailsQuery {
 
     private final SkillRepositoryPort skillRepository;
+    private final SkillResponseDtoMapper skillResponseDtoMapper;
 
-    public GetSkillDetailsService(final SkillRepositoryPort skillRepository) {
+    public GetSkillDetailsService(
+            final SkillRepositoryPort skillRepository,
+            final SkillResponseDtoMapper skillResponseDtoMapper
+    ) {
         DomainAssert.notNull(skillRepository, "Репозиторий навыков обязателен", "SKILL_REPOSITORY_REQUIRED");
+        DomainAssert.notNull(skillResponseDtoMapper, "Маппер ответа по навыку обязателен", "SKILL_RESPONSE_DTO_MAPPER_REQUIRED");
         this.skillRepository = skillRepository;
+        this.skillResponseDtoMapper = skillResponseDtoMapper;
     }
 
     @Override
@@ -31,6 +37,6 @@ public class GetSkillDetailsService implements GetSkillDetailsQuery {
     )
     public Optional<SkillResponseDto> execute(final Integer skillId) {
         DomainAssert.notNull(skillId, "ID навыка обязателен", "SKILL_ID_REQUIRED");
-        return skillRepository.findById(skillId).map(SkillResponseDto::from);
+        return skillRepository.findById(skillId).map(skillResponseDtoMapper::toResponse);
     }
 }

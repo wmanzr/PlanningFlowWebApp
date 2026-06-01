@@ -1,7 +1,6 @@
 package RUT.PlanningFlow.application.dto.task;
 
 import RUT.PlanningFlow.domain.enums.AssignStatus;
-import RUT.PlanningFlow.domain.model.Assignment;
 
 public final class TaskAssignmentResponseDto {
     private final Integer id;
@@ -19,19 +18,6 @@ public final class TaskAssignmentResponseDto {
         this.userId = userId;
         this.participantFullName = participantFullName;
         this.status = status;
-    }
-
-    public static TaskAssignmentResponseDto from(final Assignment assignment) {
-        if (assignment == null || assignment.getUser() == null) {
-            return null;
-        }
-        final String name = assignment.getUser().getFullName();
-        return new TaskAssignmentResponseDto(
-                assignment.getId(),
-                assignment.getUser().getId(),
-                name,
-                assignment.getStatus()
-        );
     }
 
     public Integer getId() {

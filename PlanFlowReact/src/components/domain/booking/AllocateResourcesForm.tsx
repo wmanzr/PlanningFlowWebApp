@@ -1,14 +1,16 @@
-import { useEffect, useMemo } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Typography from '@mui/material/Typography';
+import { tasksApi } from '@/api';
 import { Button, Input, Select, coerceApiDateTimeToIso, fromDateAndTimeInputs, toDateInput, toTimeInputRoundedToStep, } from '@/components/ui';
-import { asIsoDateTime, ResourceType, type EventResponseDto, type IsoDateTime, type TaskAllocateResourcesRequest, } from '@/types';
+import { asIsoDateTime, ResourceType, type EventResponseDto, type IsoDateTime, type ResourceReservePreviewDto, type TaskAllocateResourcesRequest, type TaskId, } from '@/types';
 const NAME_MAX_LENGTH = 200;
 const REQUIRED_MIN = 1;
 const REQUIRED_MAX = 1000;
 const TIME_STEP_MINUTES = 30;
+const PREVIEW_DEBOUNCE_MS = 450;
 const buildTimeOptions = (): {
     value: string;
     label: string;
@@ -87,7 +89,15 @@ const TYPE_OPTIONS = [
     { value: ResourceType.TRANSPORT, label: 'Транспорт' },
     { value: ResourceType.MATERIAL, label: 'Материал' },
 ];
+function reservePreviewCaption(d: ResourceReservePreviewDto): string {
+    if (d.fromExternal === 0)
+        return 'Ресурсы будут зарезервированы на внутреннем складе.';
+    if (d.fromInternal === 0)
+        return 'Ресурсы будут запрошены у внешнего поставщика.';
+    return 'Часть на складе, часть у внешнего поставщика.';
+}
 export interface AllocateResourcesFormProps {
+    taskId?: TaskId;
     defaultFrom?: IsoDateTime;
     defaultTo?: IsoDateTime;
     eventForBookingWindow?: Pick<EventResponseDto, 'startDate' | 'endDate'>;
@@ -95,7 +105,7 @@ export interface AllocateResourcesFormProps {
     onSubmit: (body: TaskAllocateResourcesRequest) => void;
     onCancel?: () => void;
 }
-export const AllocateResourcesForm = ({ defaultFrom, defaultTo, eventForBookingWindow, submitting, onSubmit, onCancel, }: AllocateResourcesFormProps) => {
+export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventForBookingWindow, submitting, onSubmit, onCancel, }: AllocateResourcesFormProps) => {
     const timeOptions = useMemo(() => buildTimeOptions(), []);
     const scheduleDefaults = useMemo(() => scheduleDefaultsFromIso(defaultFrom, defaultTo), [defaultFrom, defaultTo]);
     const { register, handleSubmit, reset, setError, control, formState: { errors }, } = useForm<FormValues, unknown, FormOutput>({
@@ -107,6 +117,16 @@ export const AllocateResourcesForm = ({ defaultFrom, defaultTo, eventForBookingW
             ...scheduleDefaults,
         },
     });
+    const wType = useWatch({ control, name: 'resourceType' });
+    const wName = useWatch({ control, name: 'resourceName' });
+    const wCount = useWatch({ control, name: 'requiredCount' });
+    const wStartD = useWatch({ control, name: 'reservedStartDate' });
+    const wStartT = useWatch({ control, name: 'reservedStartTime' });
+    const wEndD = useWatch({ control, name: 'reservedEndDate' });
+    const wEndT = useWatch({ control, name: 'reservedEndTime' });
+    const [preview, setPreview] = useState<ResourceReservePreviewDto | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const previewAbortRef = useRef<AbortController | null>(null);
     useEffect(() => {
         reset({
             resourceType: '',
@@ -115,6 +135,65 @@ export const AllocateResourcesForm = ({ defaultFrom, defaultTo, eventForBookingW
             ...scheduleDefaults,
         });
     }, [reset, scheduleDefaults]);
+    useEffect(() => {
+        previewAbortRef.current?.abort();
+        previewAbortRef.current = null;
+        setPreview(null);
+        setPreviewLoading(false);
+        if (taskId === undefined)
+            return undefined;
+        const rt = wType;
+        const name = typeof wName === 'string' ? wName.trim() : '';
+        const req = typeof wCount === 'number' && Number.isFinite(wCount)
+            ? Math.min(Math.max(Math.trunc(wCount), REQUIRED_MIN), REQUIRED_MAX)
+            : REQUIRED_MIN;
+        if (rt === '' || rt === undefined || name.length === 0)
+            return undefined;
+        const fromIso = fromDateAndTimeInputs(String(wStartD ?? ''), String(wStartT ?? ''));
+        const toIso = fromDateAndTimeInputs(String(wEndD ?? ''), String(wEndT ?? ''));
+        if (!fromIso || !toIso || new Date(toIso).getTime() <= new Date(fromIso).getTime())
+            return undefined;
+        if (eventForBookingWindow) {
+            const evStart = new Date(eventForBookingWindow.startDate).getTime();
+            const evEnd = new Date(eventForBookingWindow.endDate).getTime();
+            const a = new Date(fromIso).getTime();
+            const b = new Date(toIso).getTime();
+            if (a < evStart || b > evEnd)
+                return undefined;
+        }
+        const t = window.setTimeout(() => {
+            const ac = new AbortController();
+            previewAbortRef.current = ac;
+            setPreviewLoading(true);
+            void tasksApi
+                .reservePreview(taskId, {
+                resourceType: rt as ResourceType,
+                resourceName: name,
+                reservedFrom: fromIso,
+                reservedTo: toIso,
+                requiredCount: req,
+            }, ac.signal)
+                .then((dto) => {
+                if (!ac.signal.aborted)
+                    setPreview(dto);
+            })
+                .catch(() => {
+                if (!ac.signal.aborted)
+                    setPreview(null);
+            })
+                .finally(() => {
+                if (!ac.signal.aborted)
+                    setPreviewLoading(false);
+            });
+        }, PREVIEW_DEBOUNCE_MS);
+        return () => {
+            window.clearTimeout(t);
+            previewAbortRef.current?.abort();
+        };
+    }, [taskId, wType, wName, wCount, wStartD, wStartT, wEndD, wEndT, eventForBookingWindow?.startDate, eventForBookingWindow?.endDate]);
+    useEffect(() => () => {
+        previewAbortRef.current?.abort();
+    }, []);
     const submit = handleSubmit((data) => {
         const fromIsoRaw = fromDateAndTimeInputs(data.reservedStartDate, data.reservedStartTime);
         const toIsoRaw = fromDateAndTimeInputs(data.reservedEndDate, data.reservedEndTime);
@@ -140,15 +219,27 @@ export const AllocateResourcesForm = ({ defaultFrom, defaultTo, eventForBookingW
             reservedTo: asIsoDateTime(toIsoRaw),
         });
     });
+    const showPreviewHint = taskId !== undefined && (wType === '' || !(typeof wName === 'string' && wName.trim()));
     return (<form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-      <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        <Controller name="resourceType" control={control} render={({ field, fieldState }) => (<Select<ResourceType | ''> label="Тип ресурса" options={TYPE_OPTIONS} placeholder="Выберите ресурс" name={field.name} value={field.value} onBlur={field.onBlur} error={fieldState.error?.message} onChange={(e) => {
-                const v = e.target.value;
-                field.onChange(v === '' ? '' : (v as ResourceType));
-            }}/>)}/>
-        <Input label="Наименование" error={errors.resourceName?.message} {...register('resourceName')}/>
+      <div className="flex flex-col gap-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,55fr)_minmax(0,35fr)_minmax(0,10fr)] items-start gap-3">
+          <div className="min-w-0">
+            <Input label="Наименование" placeholder="Введите название" error={errors.resourceName?.message} {...register('resourceName')}/>
+          </div>
+          <div className="min-w-0">
+            <Controller name="resourceType" control={control} render={({ field, fieldState }) => (<Select<ResourceType | ''> label="Тип ресурса" options={TYPE_OPTIONS} placeholder="Выберите ресурс" name={field.name} value={field.value} onBlur={field.onBlur} error={fieldState.error?.message} onChange={(e) => {
+                    const v = e.target.value;
+                    field.onChange(v === '' ? '' : (v as ResourceType));
+                }}/>)}/>
+          </div>
+          <div className="min-w-0">
+            <Input label="Кол-во" type="number" min={REQUIRED_MIN} max={REQUIRED_MAX} error={errors.requiredCount?.message} {...register('requiredCount')}/>
+          </div>
+        </div>
+        {taskId !== undefined ? (<Typography variant="body2" color="text.secondary">
+          {showPreviewHint ? (<span>Укажите тип и название — покажем источник резерва.</span>) : previewLoading ? (<span>…</span>) : preview ? (<span>{reservePreviewCaption(preview)}</span>) : (<span>Укажите период брони в пределах мероприятия.</span>)}
+        </Typography>) : null}
       </div>
-      <Input label="Количество" type="number" min={REQUIRED_MIN} error={errors.requiredCount?.message} {...register('requiredCount')}/>
 
       <div className="rounded-lg border border-secondary/50 bg-surface-muted p-4">
         <div className="grid gap-4 md:grid-cols-2 md:items-start">

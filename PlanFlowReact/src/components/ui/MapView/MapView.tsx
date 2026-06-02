@@ -8,7 +8,7 @@ import { Button } from '../Button';
 import { Spinner } from '../Spinner';
 import { cn } from '../cn';
 import type { GeoPoint } from '@/types';
-import { MAP_DEFAULT_CENTER, MAP_ZOOM_LEGEND_FOCUS, MAP_ZOOM_OVERVIEW, MAP_ZOOM_TASK_LABELS_MIN } from './mapConfig';
+import { MAP_DEFAULT_CENTER, MAP_ZOOM_LEGEND_FOCUS, MAP_ZOOM_OVERVIEW, MAP_ZOOM_MARKER_LABELS_MIN } from './mapConfig';
 import { layoutMapMarkers } from './mapMarkerLayout';
 import { buildMapMarkerHtml, MAP_PRIMARY_PIN_COLOR, resolveMapMarkerColor } from './mapMarkerHtml';
 import type { MapMarker, MapMarkerKind } from './mapMarker.types';
@@ -248,9 +248,8 @@ export const MapView = ({ center = MAP_DEFAULT_CENTER, zoom = MAP_ZOOM_OVERVIEW,
             markerRefs.current.clear();
             placedMarkers.forEach((marker) => {
                 const emphasis = marker.emphasis ?? 'default';
-                const color = resolveMapMarkerColor(marker.kind);
-                const showLabelOnMap = marker.showLabelOnMap &&
-                    (marker.kind !== 'task' || mapZoom >= MAP_ZOOM_TASK_LABELS_MIN);
+                const color = marker.kind === 'event' ? primaryPinColor : resolveMapMarkerColor(marker.kind);
+                const showLabelOnMap = marker.showLabelOnMap && mapZoom >= MAP_ZOOM_MARKER_LABELS_MIN;
                 const html = buildMapMarkerHtml(marker.kind, color, marker.label, showLabelOnMap, emphasis, primaryPinColor);
                 const created = new mapglApi.HtmlMarker(map, {
                     coordinates: [marker.displayLng, marker.displayLat],

@@ -43,6 +43,7 @@ export const matchingSlice = createSlice({
             state.status = 'pending';
             state.error = null;
             state.taskId = action.meta.arg.id;
+            state.data = null;
         })
             .addCase(runMatchingThunk.fulfilled, (state, action) => {
             state.status = 'succeeded';

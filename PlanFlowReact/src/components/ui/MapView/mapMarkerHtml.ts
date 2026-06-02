@@ -1,13 +1,13 @@
 import type { MapMarkerEmphasis, MapMarkerKind } from './mapMarker.types';
 export const MAP_MARKER_HEX: Record<MapMarkerKind, string> = {
-    event: '#3d5a80',
+    event: '#6246ea',
     task: '#e45858',
     candidate: '#c9a227',
 };
 export function resolveMapMarkerColor(kind: MapMarkerKind): string {
     return MAP_MARKER_HEX[kind];
 }
-export const MAP_PRIMARY_PIN_COLOR = '#3d5a80';
+export const MAP_PRIMARY_PIN_COLOR = '#6246ea';
 const KIND_LABEL: Record<MapMarkerKind, string> = {
     event: 'Мероприятие',
     task: 'Задача',
@@ -32,11 +32,11 @@ function buildDefaultDotHtml(kind: MapMarkerKind, color: string, label: string |
     const size = kind === 'event' ? 14 : 12;
     const title = label ? escapeHtml(label) : KIND_LABEL[kind];
     const labelHtml = showLabel && label
-        ? `<span style="max-width:min(200px,38vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px/1.2 system-ui,sans-serif;color:#1a1a1a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;">${escapeHtml(label)}</span>`
+        ? `<span style="position:absolute;left:50%;bottom:100%;margin-bottom:4px;transform:translateX(-50%);max-width:min(200px,38vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px/1.2 system-ui,sans-serif;color:#1a1a1a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;">${escapeHtml(label)}</span>`
         : '';
-    return `<div title="${title}" style="display:inline-flex;flex-direction:row;align-items:center;gap:6px;transform:translate(-50%,-100%);pointer-events:auto;cursor:default;">
-  <div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.35);flex-shrink:0;"></div>
+    return `<div title="${title}" style="position:relative;width:${size}px;height:${size}px;transform:translate(-50%,-50%);pointer-events:auto;cursor:default;">
   ${labelHtml}
+  <div style="position:absolute;left:0;top:0;width:100%;height:100%;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.35);"></div>
 </div>`;
 }
 export function buildMapMarkerHtml(kind: MapMarkerKind, color: string, label: string | undefined, showLabel: boolean, emphasis: MapMarkerEmphasis, primaryColor: string = MAP_PRIMARY_PIN_COLOR): string {

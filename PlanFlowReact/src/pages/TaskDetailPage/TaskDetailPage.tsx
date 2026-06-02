@@ -696,7 +696,7 @@ export const TaskDetailPage = () => {
       <Modal open={canReserveResources && isAllocateResourcesOpen} onClose={() => setIsAllocateResourcesOpen(false)} title="Забронировать ресурс" size="ml">
         {canReserveResources ? (<>
           <CardHeader title={`Задача «${task.title}»`}/>
-          <AllocateResourcesForm defaultFrom={task.startTime} defaultTo={task.endTime} {...(event
+          <AllocateResourcesForm taskId={task.id} defaultFrom={task.startTime} defaultTo={task.endTime} {...(event
             ? {
                 eventForBookingWindow: {
                     startDate: event.startDate,

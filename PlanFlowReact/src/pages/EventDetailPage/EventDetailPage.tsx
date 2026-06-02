@@ -545,14 +545,14 @@ export const EventDetailPage = () => {
             <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
 
       {hasCoordinator ? (<div className="flex w-full min-w-0 flex-col gap-6">
-          <div className="grid w-full min-w-0 gap-6 lg:grid-cols-2 lg:items-start">
-          <Card padded={false} className="flex w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
+          <div className="grid w-full min-w-0 items-start gap-6 lg:grid-cols-2 lg:items-stretch">
+          <Card padded={false} className="flex min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 lg:h-full" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventTasks(event.id));
                 }
             }}>
-            <div className={SUMMARY_PREVIEW_PANEL_HEADER}>
+            <div className={`${SUMMARY_PREVIEW_PANEL_HEADER} shrink-0`}>
               <div>
                 <h2 className="text-lg font-semibold text-headline">Задачи</h2>
                 <p className="text-sm text-paragraph">
@@ -567,9 +567,13 @@ export const EventDetailPage = () => {
                   Добавить задачу
                 </Button>) : null}
             </div>
-            <div className={SUMMARY_PREVIEW_PANEL_BODY}>
-              {!canViewTasksPanel ? (<EmptyState title="Нет доступа к задачам"/>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<EmptyState title="Задач нет"/>) : null}
-              {canViewTasksPanel ? (<div className="flex flex-col gap-2">
+            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} lg:min-h-0 lg:flex-1`}>
+              {!canViewTasksPanel ? (<div className="flex min-h-0 flex-1 flex-col">
+                  <EmptyState fillContainer title="Нет доступа к задачам"/>
+                </div>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<div className="flex min-h-0 flex-1 flex-col">
+                  <EmptyState fillContainer title="Задач нет"/>
+                </div>) : null}
+              {canViewTasksPanel && tasks.length > 0 ? (<div className="flex flex-col gap-2">
                   {tasksPreview.preview.map((task) => (<div key={task.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();
                         navigate(PATHS.taskDetail(event.id, task.id));
@@ -591,13 +595,13 @@ export const EventDetailPage = () => {
             </div>
           </Card>
 
-          <Card padded={false} className="flex w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
+          <Card padded={false} className="flex min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 lg:h-full" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventIncidents(event.id));
                 }
             }}>
-            <div className={SUMMARY_PREVIEW_PANEL_HEADER}>
+            <div className={`${SUMMARY_PREVIEW_PANEL_HEADER} shrink-0`}>
               <div>
                 <h2 className="text-lg font-semibold text-headline">Инциденты</h2>
                 <p className="text-sm text-paragraph">
@@ -613,8 +617,10 @@ export const EventDetailPage = () => {
                   Создать инцидент
                 </Button>) : null}
             </div>
-            <div className={SUMMARY_PREVIEW_PANEL_BODY}>
-              {incidents.length === 0 && incidentsList.status !== 'pending' ? (<EmptyState title="Инцидентов нет"/>) : null}
+            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} lg:min-h-0 lg:flex-1`}>
+              {incidents.length === 0 && incidentsList.status !== 'pending' ? (<div className="flex min-h-0 flex-1 flex-col">
+                  <EmptyState fillContainer title="Инцидентов нет"/>
+                </div>) : null}
               {incidents.length > 0 ? (<div className="flex flex-col gap-2">
                   {incidentsPreview.preview.map((incident) => (<div key={incident.id} className={PREVIEW_ROW} onClick={(e) => {
                         e.stopPropagation();

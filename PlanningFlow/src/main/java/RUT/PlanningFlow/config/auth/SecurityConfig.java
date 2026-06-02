@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/tasks/*/assignments/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/matching").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/tasks/*/resources/allocate").hasAnyRole(PLANNER_ROLES)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tasks/*/resources/reserve-preview").hasAnyRole(PLANNER_ROLES)
 
                         .requestMatchers(HttpMethod.PUT, "/api/v1/bookings/**").hasAnyRole(PLANNER_ROLES)
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings/*/status/**").hasAnyRole(PLANNER_ROLES)

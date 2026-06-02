@@ -28,6 +28,7 @@ export const ENDPOINTS = {
         assignmentByUser: (id: TaskId, userId: UserId): string => `${API_BASE}/tasks/${id}/assignments/${userId}`,
         matching: (id: TaskId): string => `${API_BASE}/tasks/${id}/matching`,
         allocateResources: (id: TaskId): string => `${API_BASE}/tasks/${id}/resources/allocate`,
+        reservePreview: (id: TaskId): string => `${API_BASE}/tasks/${id}/resources/reserve-preview`,
     },
     bookings: {
         forTask: (taskId: TaskId): string => `${API_BASE}/bookings/for-task/${taskId}`,

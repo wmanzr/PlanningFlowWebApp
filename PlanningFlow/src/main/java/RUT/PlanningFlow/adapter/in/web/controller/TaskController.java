@@ -7,12 +7,14 @@ import RUT.PlanningFlow.adapter.in.web.dto.task.TaskMatchRequest;
 import RUT.PlanningFlow.adapter.in.web.mapping.TaskMatchRequestMapper;
 import RUT.PlanningFlow.adapter.in.web.dto.task.TaskUpdateRequest;
 import RUT.PlanningFlow.application.dto.matching.MatchTaskResponseDto;
+import RUT.PlanningFlow.application.dto.resource.ResourceReservePreviewDto;
 import RUT.PlanningFlow.application.dto.resource.ReserveResourcesResponseDto;
 import RUT.PlanningFlow.application.dto.task.TaskResponseDto;
 import RUT.PlanningFlow.application.pagination.PageQuery;
 import RUT.PlanningFlow.application.pagination.PageResult;
 import RUT.PlanningFlow.application.port.in.matching.MatchTaskUseCase;
 import RUT.PlanningFlow.application.port.in.task.AllocateTaskResourcesUseCase;
+import RUT.PlanningFlow.application.port.in.task.PreviewTaskResourceReserveQuery;
 import RUT.PlanningFlow.application.port.in.task.AssignParticipantUseCase;
 import RUT.PlanningFlow.application.port.in.task.CreateTaskUseCase;
 import RUT.PlanningFlow.application.port.in.task.GetMyTasksQuery;
@@ -22,6 +24,7 @@ import RUT.PlanningFlow.application.port.in.task.ManageTaskStatusUseCase;
 import RUT.PlanningFlow.application.port.in.task.UnassignParticipantUseCase;
 import RUT.PlanningFlow.application.port.in.task.UpdateTaskUseCase;
 import RUT.PlanningFlow.adapter.in.web.security.JwtPrincipal;
+import RUT.PlanningFlow.domain.enums.ResourceType;
 import RUT.PlanningFlow.domain.vo.GeoPoint;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -63,6 +66,7 @@ public class TaskController {
     private final AssignParticipantUseCase assignParticipantUseCase;
     private final UnassignParticipantUseCase unassignParticipantUseCase;
     private final AllocateTaskResourcesUseCase allocateTaskResourcesUseCase;
+    private final PreviewTaskResourceReserveQuery previewTaskResourceReserveQuery;
     private final MatchTaskUseCase matchTaskUseCase;
 
     public TaskController(
@@ -75,6 +79,7 @@ public class TaskController {
             final AssignParticipantUseCase assignParticipantUseCase,
             final UnassignParticipantUseCase unassignParticipantUseCase,
             final AllocateTaskResourcesUseCase allocateTaskResourcesUseCase,
+            final PreviewTaskResourceReserveQuery previewTaskResourceReserveQuery,
             final MatchTaskUseCase matchTaskUseCase
     ) {
         this.createTaskUseCase = createTaskUseCase;
@@ -86,6 +91,7 @@ public class TaskController {
         this.assignParticipantUseCase = assignParticipantUseCase;
         this.unassignParticipantUseCase = unassignParticipantUseCase;
         this.allocateTaskResourcesUseCase = allocateTaskResourcesUseCase;
+        this.previewTaskResourceReserveQuery = previewTaskResourceReserveQuery;
         this.matchTaskUseCase = matchTaskUseCase;
     }
 
@@ -285,6 +291,29 @@ public class TaskController {
                 request.getReservedTo()
         );
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{taskId}/resources/reserve-preview")
+    @Operation(summary = "Предпросмотр: склад / внешний поставщик", description = "Только чтение, без создания брони")
+    public ResponseEntity<ResourceReservePreviewDto> reservePreview(
+            final Authentication authentication,
+            @PathVariable final Integer taskId,
+            @RequestParam final ResourceType resourceType,
+            @RequestParam final String resourceName,
+            @RequestParam final LocalDateTime reservedFrom,
+            @RequestParam final LocalDateTime reservedTo,
+            @RequestParam(defaultValue = "1") @Min(1) @Max(1000) final int requiredCount
+    ) {
+        final JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+        return ResponseEntity.ok(previewTaskResourceReserveQuery.preview(
+                principal.userId(),
+                taskId,
+                resourceType,
+                resourceName,
+                reservedFrom,
+                reservedTo,
+                requiredCount
+        ));
     }
 
     private static GeoPoint toGeoPointOrNull(final Double latitude, final Double longitude) {

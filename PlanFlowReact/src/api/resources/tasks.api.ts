@@ -1,4 +1,4 @@
-import { type AssignmentFilter, type EventId, type ListTasksForEventQuery, type MatchTaskResponseDto, type PageResult, type ReserveResourcesResponseDto, type TaskAllocateResourcesRequest, type TaskAssignRequest, type TaskCreateRequest, type TaskId, type TaskMatchRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
+import { type AssignmentFilter, type EventId, type ListTasksForEventQuery, type MatchTaskResponseDto, type PageResult, type ReserveResourcesResponseDto, type ResourceReservePreviewDto, type TaskAllocateResourcesRequest, type TaskAssignRequest, type TaskCreateRequest, type TaskId, type TaskMatchRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
 import { http } from '../http';
 import { ENDPOINTS } from '../endpoints';
 export interface ListTasksForUserQuery extends ListTasksForEventQuery {
@@ -23,5 +23,14 @@ export const tasksApi = {
     match: (id: TaskId, body: TaskMatchRequest): Promise<MatchTaskResponseDto> => http.post<MatchTaskResponseDto>(ENDPOINTS.tasks.matching(id), body).then((r) => r.data),
     allocateResources: (id: TaskId, body: TaskAllocateResourcesRequest): Promise<ReserveResourcesResponseDto> => http
         .post<ReserveResourcesResponseDto>(ENDPOINTS.tasks.allocateResources(id), body)
+        .then((r) => r.data),
+    reservePreview: (id: TaskId, params: {
+        resourceType: TaskAllocateResourcesRequest['resourceType'];
+        resourceName: string;
+        reservedFrom: string;
+        reservedTo: string;
+        requiredCount: number;
+    }, signal?: AbortSignal): Promise<ResourceReservePreviewDto> => http
+        .get<ResourceReservePreviewDto>(ENDPOINTS.tasks.reservePreview(id), { params, signal })
         .then((r) => r.data),
 };

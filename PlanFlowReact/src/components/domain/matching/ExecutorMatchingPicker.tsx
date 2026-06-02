@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo } from 'react';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Badge } from '@/components/ui';
+import { Badge, Spinner } from '@/components/ui';
 import { surnameWithInitials } from '@/components/domain/event/EventCard';
 import { buildExecutorMatchingLists } from './buildExecutorMatchingLists';
 import { ExecutorMatchingCard } from './ExecutorMatchingCard';
@@ -98,14 +98,16 @@ export function ExecutorMatchingPicker({ matchResult, matchStatus, matchError, t
             })}/>);
     };
     return (<div className="flex min-h-0 flex-1 flex-col gap-3">
-            {matchStatus === 'pending' ? (<Typography variant="body2" color="text.secondary" className="shrink-0">
-                    Выполняется подбор кандидатов…
-                </Typography>) : null}
             {matchError ? (<Typography variant="body2" color="error" className="shrink-0">
                     {matchError.message}
                 </Typography>) : null}
 
-            {matchResult ? (<>
+            {matchStatus === 'pending' ? (<div className="flex min-h-[min(240px,36vh)] flex-1 flex-col items-center justify-center gap-3">
+                    <Spinner size="lg" label="Выполняется подбор кандидатов"/>
+                    <Typography variant="body2" color="text.secondary" className="max-w-sm text-center">
+                        Выполняется подбор кандидатов…
+                    </Typography>
+                </div>) : matchResult ? (<>
                     <div className="shrink-0 rounded-lg border border-secondary/45 bg-surface-muted/70 px-3 py-2.5">
                         <Typography variant="body2" className="font-semibold text-headline">
                             Выделено: {selectedExecutorIds.size} из {requiredSlots}

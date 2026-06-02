@@ -36,10 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional(readOnly = true)
@@ -69,10 +67,10 @@ public class TaskMatchingService implements MatchTaskUseCase {
             final int requiredCount
     ) {
         if (callerUserId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+            throw new DomainException("Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         }
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new DomainException("Задача не найдена", "TASK_NOT_FOUND"));
         PlanningAccessPolicy.assertCanManageTaskAsPlanner(actor, task);

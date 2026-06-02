@@ -9,10 +9,9 @@ import RUT.PlanningFlow.domain.enums.EventStatus;
 import RUT.PlanningFlow.domain.model.Event;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional
@@ -44,12 +43,15 @@ public class GeneratePostMortemAIReportService implements GeneratePostMortemAIRe
         DomainAssert.notNull(eventId, "ID мероприятия обязателен", "EVENT_ID_REQUIRED");
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Мероприятие не найдено", "EVENT_NOT_FOUND"));
         PlanningAccessPolicy.assertCanManageEvent(actor, event);
         if (event.getStatus() != EventStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Отчет ИИ доступен только для завершенного мероприятия");
+            throw new DomainException(
+                    "Отчет ИИ доступен только для завершенного мероприятия",
+                    "POST_MORTEM_AI_EVENT_NOT_COMPLETED"
+            );
         }
         eventAiPostmortemReportRepository.upsertPending(eventId);
         postMortemAiGenerationTrigger.scheduleAfterCommit(eventId);

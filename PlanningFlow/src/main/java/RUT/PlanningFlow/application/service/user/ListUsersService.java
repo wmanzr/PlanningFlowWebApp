@@ -7,12 +7,11 @@ import RUT.PlanningFlow.application.port.in.user.ListUsersQuery;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.application.security.PlanningAccessPolicy;
 import RUT.PlanningFlow.domain.enums.UserRoles;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional(readOnly = true)
@@ -42,12 +41,12 @@ public class ListUsersService implements ListUsersQuery {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
 
         final User caller = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
 
         if (!PlanningAccessPolicy.hasRole(caller, UserRoles.ADMIN)
                 && !PlanningAccessPolicy.hasRole(caller, UserRoles.ORGANIZER)
                 && !PlanningAccessPolicy.hasRole(caller, UserRoles.COORDINATOR)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
 
         final boolean callerIsAdmin = PlanningAccessPolicy.hasRole(caller, UserRoles.ADMIN);

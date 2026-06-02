@@ -16,10 +16,9 @@ import RUT.PlanningFlow.domain.model.ResourceBooking;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,7 +58,7 @@ public class ManageTaskStatusService implements ManageTaskStatusUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(taskId, "ID задачи обязателен", "TASK_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Task> exTask = taskRepository.findById(taskId);
         if (exTask.isEmpty()) {
             return Optional.empty();
@@ -100,7 +99,7 @@ public class ManageTaskStatusService implements ManageTaskStatusUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(taskId, "ID задачи обязателен", "TASK_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Task> exTask = taskRepository.findById(taskId);
         if (exTask.isEmpty()) {
             return Optional.empty();
@@ -117,7 +116,7 @@ public class ManageTaskStatusService implements ManageTaskStatusUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(taskId, "ID задачи обязателен", "TASK_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Task> exTask = taskRepository.findById(taskId);
         if (exTask.isEmpty()) {
             return Optional.empty();

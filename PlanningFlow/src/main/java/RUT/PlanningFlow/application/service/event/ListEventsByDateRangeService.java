@@ -10,12 +10,11 @@ import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.application.security.PlanningAccessPolicy;
 import RUT.PlanningFlow.domain.enums.UserRoles;
 import RUT.PlanningFlow.domain.model.Event;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ public class ListEventsByDateRangeService implements ListEventsByDateRangeQuery 
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
 
         final User caller = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
 
         final String titlePart = (title == null || title.isBlank()) ? null : title.trim();
         final boolean hasDates = start != null && end != null;

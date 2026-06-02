@@ -1,12 +1,11 @@
 package RUT.PlanningFlow.application.security;
 
 import RUT.PlanningFlow.domain.enums.UserRoles;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.Event;
 import RUT.PlanningFlow.domain.model.Role;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 public final class PlanningAccessPolicy {
 
@@ -60,7 +59,7 @@ public final class PlanningAccessPolicy {
 
     public static void assertCanManageEvent(final User actor, final Event event) {
         if (!canManageEvent(actor, event)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
     }
 
@@ -77,13 +76,13 @@ public final class PlanningAccessPolicy {
 
     public static void assertCanEditEvent(final User actor, final Event event) {
         if (!canEditEvent(actor, event)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
     }
 
     public static void assertCanManageTaskAsPlanner(final User actor, final Task task) {
         if (task == null || task.getEvent() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
         assertCanManageEvent(actor, task.getEvent());
     }
@@ -103,7 +102,7 @@ public final class PlanningAccessPolicy {
 
     public static void assertCanViewTask(final User actor, final Task task, final boolean assignedToThisTask) {
         if (!canViewTask(actor, task, assignedToThisTask)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
     }
 }

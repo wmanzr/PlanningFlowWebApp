@@ -12,9 +12,7 @@ import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
 import RUT.PlanningFlow.domain.vo.GeoPoint;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -65,7 +63,7 @@ public class UpdateEventService implements UpdateEventUseCase {
         DomainAssert.notNull(eventId, "ID мероприятия обязателен", "EVENT_ID_REQUIRED");
 
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
 
         final Optional<Event> exEvent = eventRepository.findById(eventId);
         if (exEvent.isEmpty()) {

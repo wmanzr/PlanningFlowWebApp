@@ -14,10 +14,9 @@ import RUT.PlanningFlow.domain.enums.UserRoles;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,9 +67,9 @@ public class GetMyTasksService implements GetMyTasksQuery {
         DomainAssert.notNull(pageQuery, "Параметры пагинации обязательны", "PAGE_QUERY_REQUIRED");
 
         final User caller = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         if (!PlanningAccessPolicy.hasRole(caller, UserRoles.ADMIN) && !callerUserId.equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
 
         final List<AssignStatus> statuses = switch (filter) {

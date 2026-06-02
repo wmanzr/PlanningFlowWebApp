@@ -24,10 +24,8 @@ import RUT.PlanningFlow.domain.utils.DomainAssert;
 import RUT.PlanningFlow.domain.vo.DateTimeRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -104,7 +102,7 @@ public class AllocateTaskResourcesService implements AllocateTaskResourcesUseCas
 
         final Phase1Result phase1 = transactionTemplate.execute(status -> {
             final User actor = userRepository.findById(callerUserId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                    .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
             final Task task = taskRepository.findById(taskId)
                     .orElseThrow(() -> new DomainException("Задача не найдена", "TASK_NOT_FOUND"));
             PlanningAccessPolicy.assertCanManageTaskAsPlanner(actor, task);

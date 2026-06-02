@@ -51,13 +51,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ErrorResponse> handleDomain(DomainException ex) {
-        final HttpStatus status = switch (ex.getErrorCode()) {
+        return errorResponse(resolveDomainHttpStatus(ex.getErrorCode()), ex.getMessage(), ex.getErrorCode());
+    }
+
+    private static HttpStatus resolveDomainHttpStatus(final String code) {
+        if (code == null) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (code.endsWith("_NOT_FOUND")) {
+            return HttpStatus.NOT_FOUND;
+        }
+        return switch (code) {
             case "EXTERNAL_SUPPLIER_UNAVAILABLE", "EXTERNAL_SUPPLIER_TIMEOUT" -> HttpStatus.SERVICE_UNAVAILABLE;
             case "USERNAME_TAKEN", "EMAIL_TAKEN" -> HttpStatus.CONFLICT;
             case "INVALID_CREDENTIALS", "REFRESH_TOKEN_INVALID" -> HttpStatus.UNAUTHORIZED;
+            case "ACCESS_DENIED" -> HttpStatus.FORBIDDEN;
             default -> HttpStatus.BAD_REQUEST;
         };
-        return errorResponse(status, ex.getMessage(), ex.getErrorCode());
     }
 
     @ExceptionHandler(ResponseStatusException.class)

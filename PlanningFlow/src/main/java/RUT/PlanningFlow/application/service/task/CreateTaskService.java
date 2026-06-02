@@ -15,10 +15,8 @@ import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
 import RUT.PlanningFlow.domain.vo.GeoPoint;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,7 +62,7 @@ public class CreateTaskService implements CreateTaskUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(eventId, "ID мероприятия обязателен", "EVENT_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new DomainException("Мероприятие не найдено", "EVENT_NOT_FOUND"));
         PlanningAccessPolicy.assertCanManageEvent(actor, event);

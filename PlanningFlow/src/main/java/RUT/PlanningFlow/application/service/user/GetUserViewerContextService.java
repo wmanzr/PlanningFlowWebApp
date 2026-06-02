@@ -12,10 +12,9 @@ import RUT.PlanningFlow.domain.model.Event;
 import RUT.PlanningFlow.domain.model.Role;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,9 +49,9 @@ public class GetUserViewerContextService implements GetUserViewerContextQuery {
     @Override
     public UserViewerContextDto execute(final int viewerUserId, final int targetUserId) {
         final User viewer = userRepository.findById(viewerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final User target = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
 
         final boolean organizer = hasRole(viewer, UserRoles.ORGANIZER);
         final boolean coordinatorViewer = hasRole(viewer, UserRoles.COORDINATOR);

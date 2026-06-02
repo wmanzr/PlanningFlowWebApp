@@ -14,10 +14,9 @@ import RUT.PlanningFlow.domain.model.Incident;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -114,10 +113,10 @@ public class ManageEventStatusService implements ManageEventStatusUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(eventId, "ID мероприятия обязателен", "EVENT_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Event> ex = eventRepository.findById(eventId);
         if (ex.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new DomainException("Мероприятие не найдено", "EVENT_NOT_FOUND");
         }
         final Event event = ex.get();
         PlanningAccessPolicy.assertCanManageEvent(actor, event);
@@ -129,10 +128,10 @@ public class ManageEventStatusService implements ManageEventStatusUseCase {
         DomainAssert.notNull(callerUserId, "Идентификатор вызывающего пользователя обязателен", "CALLER_USER_ID_REQUIRED");
         DomainAssert.notNull(eventId, "ID мероприятия обязателен", "EVENT_ID_REQUIRED");
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Event> ex = eventRepository.findById(eventId);
         if (ex.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new DomainException("Мероприятие не найдено", "EVENT_NOT_FOUND");
         }
         final Event event = ex.get();
         PlanningAccessPolicy.assertCanEditEvent(actor, event);

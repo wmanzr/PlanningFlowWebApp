@@ -14,10 +14,8 @@ import RUT.PlanningFlow.domain.model.Assignment;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -57,7 +55,7 @@ public class AssignParticipantService implements AssignParticipantUseCase {
         DomainAssert.notNull(userId, "ID участника обязателен", "USER_ID_REQUIRED");
 
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new DomainException("Задача не найдена", "TASK_NOT_FOUND"));
         PlanningAccessPolicy.assertCanManageTaskAsPlanner(actor, task);

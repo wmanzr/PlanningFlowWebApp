@@ -7,13 +7,12 @@ import RUT.PlanningFlow.application.port.out.repository.EventRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.TaskRepositoryPort;
 import RUT.PlanningFlow.application.port.out.repository.UserRepositoryPort;
 import RUT.PlanningFlow.application.security.PlanningAccessPolicy;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import RUT.PlanningFlow.domain.model.Event;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -57,10 +56,10 @@ public class GetEventDetailsService implements GetEventDetailsQuery {
         }
         final Event event = exEvent.get();
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final boolean assigned = assignmentRepository.existsAssignmentForUserOnEvent(actor.getId(), eventId);
         if (!PlanningAccessPolicy.canViewEvent(actor, event, assigned)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new DomainException("Доступ запрещён", "ACCESS_DENIED");
         }
         final long tasks = taskRepository.countTasksForEvent(eventId);
         return Optional.of(eventResponseDtoMapper.toResponse(event, tasks));

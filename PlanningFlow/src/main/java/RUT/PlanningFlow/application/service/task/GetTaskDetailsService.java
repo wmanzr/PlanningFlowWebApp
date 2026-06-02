@@ -11,10 +11,9 @@ import RUT.PlanningFlow.domain.model.Assignment;
 import RUT.PlanningFlow.domain.model.Task;
 import RUT.PlanningFlow.domain.model.User;
 import RUT.PlanningFlow.domain.utils.DomainAssert;
-import org.springframework.http.HttpStatus;
+import RUT.PlanningFlow.domain.exception.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +54,7 @@ public class GetTaskDetailsService implements GetTaskDetailsQuery {
         DomainAssert.notNull(taskId, "ID задачи обязателен", "TASK_ID_REQUIRED");
 
         final User actor = userRepository.findById(callerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new DomainException("Пользователь не найден", "USER_NOT_FOUND"));
         final Optional<Task> exTask = taskRepository.findById(taskId);
         if (exTask.isEmpty()) {
             return Optional.empty();

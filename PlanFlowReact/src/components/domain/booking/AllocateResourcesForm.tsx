@@ -102,10 +102,12 @@ export interface AllocateResourcesFormProps {
     defaultTo?: IsoDateTime;
     eventForBookingWindow?: Pick<EventResponseDto, 'startDate' | 'endDate'>;
     submitting?: boolean;
+    formId?: string;
+    hideFooter?: boolean;
     onSubmit: (body: TaskAllocateResourcesRequest) => void;
     onCancel?: () => void;
 }
-export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventForBookingWindow, submitting, onSubmit, onCancel, }: AllocateResourcesFormProps) => {
+export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventForBookingWindow, submitting, formId, hideFooter, onSubmit, onCancel, }: AllocateResourcesFormProps) => {
     const timeOptions = useMemo(() => buildTimeOptions(), []);
     const scheduleDefaults = useMemo(() => scheduleDefaultsFromIso(defaultFrom, defaultTo), [defaultFrom, defaultTo]);
     const { register, handleSubmit, reset, setError, control, formState: { errors }, } = useForm<FormValues, unknown, FormOutput>({
@@ -220,7 +222,7 @@ export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventFor
         });
     });
     const showPreviewHint = taskId !== undefined && (wType === '' || !(typeof wName === 'string' && wName.trim()));
-    return (<form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+    return (<form id={formId} className="flex flex-col gap-4" onSubmit={submit} noValidate>
       <div className="flex flex-col gap-2">
         <div className="grid min-w-0 grid-cols-[minmax(0,55fr)_minmax(0,35fr)_minmax(0,10fr)] items-start gap-3">
           <div className="min-w-0">
@@ -236,8 +238,8 @@ export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventFor
             <Input label="Кол-во" type="number" min={REQUIRED_MIN} max={REQUIRED_MAX} error={errors.requiredCount?.message} {...register('requiredCount')}/>
           </div>
         </div>
-        {taskId !== undefined ? (<Typography variant="body2" color="text.secondary">
-          {showPreviewHint ? (<span>Укажите тип и название — покажем источник резерва.</span>) : previewLoading ? (<span>…</span>) : preview ? (<span>{reservePreviewCaption(preview)}</span>) : (<span>Укажите период брони в пределах мероприятия.</span>)}
+        {taskId !== undefined && !showPreviewHint ? (<Typography variant="body2" color="text.secondary">
+          {previewLoading ? (<span>…</span>) : preview ? (<span>{reservePreviewCaption(preview)}</span>) : (<span>Укажите период брони в пределах мероприятия.</span>)}
         </Typography>) : null}
       </div>
 
@@ -260,13 +262,13 @@ export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventFor
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      {hideFooter ? null : (<div className="flex justify-end gap-2">
         {onCancel ? (<Button type="button" variant="ghost" onClick={onCancel}>
             Отмена
           </Button>) : null}
         <Button type="submit" loading={submitting}>
           Зарезервировать
         </Button>
-      </div>
+      </div>)}
     </form>);
 };

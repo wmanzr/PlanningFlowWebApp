@@ -18,12 +18,16 @@ import { fetchSkillsThunk } from '@/store/slices/skills/skillsSlice';
 import { selectAllSkills, selectSkillsListMeta } from '@/store/slices/skills/selectors';
 import { fetchEventByIdThunk, fetchEventDashboardThunk, } from '@/store/slices/events/eventsSlice';
 import { selectEventById } from '@/store/slices/events/selectors';
-import { assignTaskThunk, createTaskThunk, fetchTaskByIdThunk, fetchTasksForEventThunk, updateTaskThunk, } from '@/store/slices/tasks/tasksSlice';
-import { makeSelectTasksByEvent, selectTaskById } from '@/store/slices/tasks/selectors';
+import { allocateTaskResourcesThunk, assignTaskThunk, createTaskThunk, fetchTaskByIdThunk, fetchTasksForEventThunk, updateTaskThunk, } from '@/store/slices/tasks/tasksSlice';
+import { makeSelectTasksByEvent, selectTaskById, selectTaskActionMeta, } from '@/store/slices/tasks/selectors';
+import { fetchBookingsForTaskThunk } from '@/store/slices/bookings/bookingsSlice';
 import { fetchUsersThunk } from '@/store/slices/users/usersSlice';
-import { asIsoDateTime, asSkillId, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, MatchingMode, UserRole, type AppApiError, type EventId, type EventResponseDto, type SkillResponseDto, type TaskId, type TaskResponseDto, type UserId, type UserResponseDto, } from '@/types';
+import { selectCurrentUser } from '@/store/slices/auth/selectors';
+import { asIsoDateTime, asSkillId, LATITUDE_MAX, LATITUDE_MIN, LONGITUDE_MAX, LONGITUDE_MIN, MatchingMode, UserRole, type AppApiError, type EventId, type EventResponseDto, type SkillResponseDto, type TaskAllocateResourcesRequest, type TaskId, type TaskResponseDto, type UserId, type UserResponseDto, } from '@/types';
 import { isEligibleParentTask } from '@/utils/isEligibleParentTask';
+import { userCanReserveTaskResources } from '@/utils/userCanReserveTaskResources';
 import { validationErrorsToToastMessage } from '@/utils/validationErrorsToToastMessage';
+import { AllocateResourcesForm } from '@/components/domain/booking';
 import { PATHS } from '@/pages/paths';
 const TITLE_MAX = 200;
 const MIN_PEOPLE = 1;
@@ -32,7 +36,9 @@ const MAX_TASK_DURATION_MS = 8 * 60 * 60 * 1000;
 const MATCH_MAX_DAILY_LOAD_MINUTES = 480;
 const MATCH_MIN_TECHNICAL_GAP_MINUTES = 15;
 const TIME_STEP_MINUTES = 30;
-const PARENT_TASK_NONE_MESSAGE = 'Все задачи на мероприятии завершаются позже начала текущей задачи';
+const PARENT_TASK_EMPTY_HELPER = 'Нет задач для выбора: ни одна не завершается раньше начала этой.';
+const WIZARD_ALLOCATE_FORM_ID = 'task-create-wizard-allocate';
+export type WizardStep = 0 | 1 | 2;
 const TASK_MATCHING_RADIUS_OPTIONS: {
     value: number;
     label: string;
@@ -164,12 +170,15 @@ export interface TaskCreateWizardProps {
     open: boolean;
     eventId: EventId;
     onClose: () => void;
-    /** Notifies parent when step changes (e.g. to toggle modal body scroll on matching step). */
-    onStepChange?: (step: 0 | 1) => void;
+    onStepChange?: (step: WizardStep) => void;
 }
 export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskCreateWizardProps) => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const viewer = useAppSelector(selectCurrentUser);
+    const taskAction = useAppSelector(selectTaskActionMeta);
+    const canReserveStep = userCanReserveTaskResources(viewer?.roles);
+    const wizardTotalSteps = canReserveStep ? 3 : 2;
     const skills = useAppSelector(selectAllSkills);
     const skillsList = useAppSelector(selectSkillsListMeta);
     const timeOptions = useMemo(() => buildTimeOptions(), []);
@@ -179,7 +188,7 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
     const selectTasksForEvent = useMemo(() => makeSelectTasksByEvent(eventId), [eventId]);
     const eventTasks = useAppSelector(selectTasksForEvent);
     const eventEntity = useAppSelector(selectEventById(eventId));
-    const [step, setStep] = useState<0 | 1>(0);
+    const [step, setStep] = useState<WizardStep>(0);
     const [createdTaskId, setCreatedTaskId] = useState<TaskId | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [executorSearch, setExecutorSearch] = useState('');
@@ -491,7 +500,7 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
             return next;
         });
     }, [requiredSlots]);
-    const handleFinishStep2 = useCallback(async () => {
+    const handleMatchingStepComplete = useCallback(async () => {
         if (!createdTaskId) {
             onClose();
             return;
@@ -525,8 +534,13 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
                 message: 'Исполнители назначены на задачу',
                 ttlMs: 4000,
             }));
-            navigate(PATHS.taskDetail(eventId, createdTaskId));
-            onClose();
+            if (canReserveStep) {
+                setStep(2);
+            }
+            else {
+                navigate(PATHS.taskDetail(eventId, createdTaskId));
+                onClose();
+            }
         }
         catch (raw: unknown) {
             dispatch(toastsActions.push({
@@ -539,6 +553,7 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
             setBulkAssigning(false);
         }
     }, [
+        canReserveStep,
         createdTaskId,
         dispatch,
         eventId,
@@ -548,6 +563,39 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
         requiredSlots,
         selectedExecutorIds,
     ]);
+    const finishWizardOpenTask = useCallback(() => {
+        if (!createdTaskId) {
+            onClose();
+            return;
+        }
+        navigate(PATHS.taskDetail(eventId, createdTaskId));
+        onClose();
+    }, [createdTaskId, eventId, navigate, onClose]);
+    const handleSkipBooking = useCallback(() => {
+        finishWizardOpenTask();
+    }, [finishWizardOpenTask]);
+    const handleAllocateFromWizard = useCallback(async (body: TaskAllocateResourcesRequest) => {
+        if (!createdTaskId)
+            return;
+        try {
+            await dispatch(allocateTaskResourcesThunk({ id: createdTaskId, body })).unwrap();
+            void dispatch(fetchBookingsForTaskThunk({ taskId: createdTaskId, query: { page: 1, size: 100 } }));
+            void dispatch(fetchEventDashboardThunk(eventId));
+            dispatch(toastsActions.push({
+                level: 'success',
+                message: 'Ресурс забронирован',
+                ttlMs: 4000,
+            }));
+            finishWizardOpenTask();
+        }
+        catch (raw: unknown) {
+            dispatch(toastsActions.push({
+                level: 'error',
+                message: validationErrorsToToastMessage(raw as AppApiError),
+                ttlMs: 6000,
+            }));
+        }
+    }, [createdTaskId, dispatch, eventId, finishWizardOpenTask]);
     const scheduleBannerMessages = useMemo(() => {
         const lines: string[] = [];
         if (scheduleRangeMessage?.trim()) {
@@ -569,7 +617,7 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
     ]);
     if (!open)
         return null;
-    return (<div className={`flex w-full min-w-[min(100%,42rem)] flex-col gap-4 ${step === 1 ? 'min-h-0 flex-1' : ''}`}>
+    return (<div className={`flex w-full min-w-[min(100%,42rem)] flex-col gap-4 ${step === 1 || step === 2 ? 'min-h-0 flex-1' : ''}`}>
       {step === 0 ? (<form className="flex flex-col gap-4" onSubmit={goNext} noValidate>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5.25rem,7rem)] items-start gap-3">
             <Input className="min-w-0" label="Название задачи" error={errors.title?.message} {...register('title')}/>
@@ -671,47 +719,76 @@ export const TaskCreateWizard = ({ open, eventId, onClose, onStepChange }: TaskC
             }}/>
             {errors.latitude?.message ? (<p className="mt-2 text-sm text-danger">{errors.latitude.message}</p>) : null}
           </div>
-          <div className="flex justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Button type="button" variant="ghost" onClick={onClose}>
               Отмена
             </Button>
-            <Button type="submit" loading={submitting}>
-              Далее
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <Typography component="span" variant="body2" color="text.secondary" className="text-xs tabular-nums sm:text-sm">
+                Шаг 1 из {wizardTotalSteps}
+              </Typography>
+              <Button type="submit" loading={submitting}>
+                Далее
+              </Button>
+            </div>
           </div>
-        </form>) : (<div className="flex min-h-[min(560px,68vh)] flex-1 flex-col gap-3 overflow-hidden">
+        </form>) : null}
+      {step === 1 ? (<div className="flex min-h-[min(560px,68vh)] flex-1 flex-col gap-3 overflow-hidden">
           <div className="shrink-0 flex flex-col gap-2 rounded-lg border border-secondary/40 bg-surface-muted p-3">
-              <Autocomplete disablePortal disabled={!hasParentTaskOptions} forcePopupIcon={hasParentTaskOptions} {...(!hasParentTaskOptions
-            ? {
-                inputValue: PARENT_TASK_NONE_MESSAGE,
-                onInputChange: () => undefined,
-            }
-            : {})} options={taskPickerOptions} value={parentTaskValue} onChange={(_, task) => void handleParentTaskChange(task)} getOptionLabel={(t) => formatTaskPickerLabel(t)} filterOptions={filterTaskOptions} isOptionEqualToValue={(a, b) => a.id === b.id} renderOption={(props, option) => (<li {...props} key={option.id}>
+              <Autocomplete disablePortal disabled={!hasParentTaskOptions} forcePopupIcon={hasParentTaskOptions} options={taskPickerOptions} value={parentTaskValue} onChange={(_, task) => void handleParentTaskChange(task)} getOptionLabel={(t) => formatTaskPickerLabel(t)} filterOptions={filterTaskOptions} isOptionEqualToValue={(a, b) => a.id === b.id} renderOption={(props, option) => (<li {...props} key={option.id}>
                     <div className="flex flex-col py-0.5">
                       <span>{option.title}</span>
                       <Typography variant="caption" color="text.secondary">
                         {formatDateTime(option.startTime)} — {formatDateTime(option.endTime)}
                       </Typography>
                     </div>
-                  </li>)} renderInput={(params) => (<TextField {...params} label="Первоочередная задача" placeholder={hasParentTaskOptions
-                    ? 'Поиск по названию или датам…'
-                    : PARENT_TASK_NONE_MESSAGE} size="small"/>)}/>
-              {hasParentTaskOptions ? (<Typography variant="caption" color="text.secondary">
-                  Необязательно: показаны только задачи, которые завершатся до начала этой.
-                </Typography>) : null}
+                  </li>)} renderInput={(params) => (<TextField {...params} label="Первоочередная задача" placeholder={hasParentTaskOptions ? 'Поиск по названию или датам…' : 'Нет вариантов'} {...(hasParentTaskOptions ? {} : { helperText: PARENT_TASK_EMPTY_HELPER })} size="small"/>)}/>
             </div>
 
           <ExecutorMatchingPicker matchResult={matchResult} matchStatus={matchStatus} matchError={matchError} taskStartTime={createdTaskEntity?.startTime} requiredSlots={requiredSlots} executors={executors} executorSearch={executorSearch} onExecutorSearchChange={setExecutorSearch} selectedExecutorIds={selectedExecutorIds} onToggleExecutor={toggleExecutorSelection}/>
-          <div className="flex shrink-0 flex-wrap justify-between gap-2 border-t border-secondary/40 pt-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-secondary/40 pt-3">
             <Button type="button" variant="ghost" onClick={() => {
                 setStep(0);
             }}>
               Назад
             </Button>
-            <Button type="button" loading={bulkAssigning} onClick={() => void handleFinishStep2()}>
-              Готово
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <Typography component="span" variant="body2" color="text.secondary" className="text-xs tabular-nums sm:text-sm">
+                Шаг 2 из {wizardTotalSteps}
+              </Typography>
+              <Button type="button" loading={bulkAssigning} onClick={() => void handleMatchingStepComplete()}>
+                Далее
+              </Button>
+            </div>
           </div>
-        </div>)}
+        </div>) : null}
+      {step === 2 && createdTaskId ? (<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+          <div className="min-w-0 flex-1 rounded-xl border border-border/55 bg-surface p-3 shadow-sm sm:p-4">
+            <AllocateResourcesForm formId={WIZARD_ALLOCATE_FORM_ID} hideFooter taskId={createdTaskId} {...(createdTaskEntity?.startTime !== undefined ? { defaultFrom: createdTaskEntity.startTime } : {})} {...(createdTaskEntity?.endTime !== undefined ? { defaultTo: createdTaskEntity.endTime } : {})} {...(eventEntity
+            ? {
+                eventForBookingWindow: {
+                    startDate: eventEntity.startDate,
+                    endDate: eventEntity.endDate,
+                },
+            }
+            : {})} submitting={taskAction.status === 'pending'} onSubmit={(body) => void handleAllocateFromWizard(body)}/>
+          </div>
+          <div className="flex shrink-0 flex-col gap-2 border-t border-secondary/40 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => setStep(1)}>
+              Назад
+            </Button>
+            <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
+              <Typography component="span" variant="body2" color="text.secondary" className="text-xs tabular-nums sm:text-sm">
+                Шаг 3 из {wizardTotalSteps}
+              </Typography>
+              <Button type="button" variant="ghost" className="w-full sm:w-auto sm:min-w-[9rem]" onClick={handleSkipBooking}>
+                Пропустить
+              </Button>
+              <Button type="submit" form={WIZARD_ALLOCATE_FORM_ID} className="w-full sm:w-auto sm:min-w-[11rem]" loading={taskAction.status === 'pending'}>
+                Зарезервировать
+              </Button>
+            </div>
+          </div>
+        </div>) : null}
     </div>);
 };

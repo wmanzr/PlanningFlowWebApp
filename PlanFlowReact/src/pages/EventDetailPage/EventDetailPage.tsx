@@ -666,7 +666,7 @@ export const EventDetailPage = () => {
             setCreateTaskBodyScroll(true);
             setIsCreateTaskOpen(false);
         }} title="Новая задача" size="lg">
-        {user && canMutateLiveEvent && hasCoordinator && isCreateTaskOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0)} onClose={() => {
+        {user && canMutateLiveEvent && hasCoordinator && isCreateTaskOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0 || s === 2)} onClose={() => {
                 dispatch(tasksActions.clearActionError());
                 setCreateTaskBodyScroll(true);
                 setIsCreateTaskOpen(false);

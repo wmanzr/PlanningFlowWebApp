@@ -566,6 +566,12 @@ export const TaskDetailPage = () => {
                     setIsCreateIncidentOpen(false);
                 }} onSubmit={handleCreateIncidentFromTask}/>) : null}
         </Modal>
+
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={() => navigate(PATHS.eventTasks(eventId))}>
+            ← К списку задач
+          </Button>
+        </div>
       </PageLayout>);
     }
     return (<PageLayout title={task.title} description={event
@@ -722,6 +728,12 @@ export const TaskDetailPage = () => {
       <Modal open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Редактирование задачи" size="lg">
         {user && isEditOpen ? (<TaskForm initial={task} eventId={asEventId(task.eventId ?? eventId)} {...(event ? { eventForScheduleValidation: event } : {})} submitting={action.status === 'pending'} onCancel={() => setIsEditOpen(false)} onSubmit={handleEditSubmit}/>) : null}
       </Modal>
+
+      <div className="flex justify-end">
+        <Button variant="ghost" onClick={() => navigate(PATHS.eventTasks(eventId))}>
+          ← К списку задач
+        </Button>
+      </div>
 
     </PageLayout>);
 };

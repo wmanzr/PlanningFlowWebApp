@@ -148,7 +148,7 @@ export const EventTasksPage = () => {
             setIsCreateOpen(false);
             refetchList();
         }} title="Новая задача" size="lg">
-        {user && canPlanTasks && isCreateOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0)} onClose={() => {
+        {user && canPlanTasks && isCreateOpen ? (<TaskCreateWizard open eventId={event.id} onStepChange={(s) => setCreateTaskBodyScroll(s === 0 || s === 2)} onClose={() => {
                 dispatch(tasksActions.clearActionError());
                 setCreateTaskBodyScroll(true);
                 setIsCreateOpen(false);

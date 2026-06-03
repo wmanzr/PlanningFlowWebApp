@@ -1,3 +1,4 @@
+import { type AxiosResponse } from 'axios';
 import { type AssignmentFilter, type EventId, type ListTasksForEventQuery, type MatchTaskResponseDto, type PageResult, type ReserveResourcesResponseDto, type ResourceReservePreviewDto, type TaskAllocateResourcesRequest, type TaskAssignRequest, type TaskCreateRequest, type TaskId, type TaskMatchRequest, type TaskResponseDto, type TaskUpdateRequest, type UserId, } from '@/types';
 import { http } from '../http';
 import { ENDPOINTS } from '../endpoints';
@@ -30,7 +31,11 @@ export const tasksApi = {
         reservedFrom: string;
         reservedTo: string;
         requiredCount: number;
-    }, signal?: AbortSignal): Promise<ResourceReservePreviewDto> => http
-        .get<ResourceReservePreviewDto>(ENDPOINTS.tasks.reservePreview(id), { params, signal })
-        .then((r) => r.data),
+    }, signal?: AbortSignal): Promise<ResourceReservePreviewDto> =>
+        http
+            .get<ResourceReservePreviewDto>(ENDPOINTS.tasks.reservePreview(id), {
+                params,
+                ...(signal !== undefined ? { signal } : {}),
+            })
+            .then((r: AxiosResponse<ResourceReservePreviewDto>): ResourceReservePreviewDto => r.data),
 };

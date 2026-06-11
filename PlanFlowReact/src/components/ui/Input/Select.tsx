@@ -14,10 +14,11 @@ export interface SelectProps<T extends string | number = string> extends Omit<Se
     options: SelectOption<T>[];
     placeholder?: string;
 }
-const SelectInner = forwardRef<HTMLSelectElement, SelectProps>(({ id, label, hint, error, suppressErrorHelperText, options, placeholder, className, value, onChange, name, disabled, }, ref) => {
+const SelectInner = forwardRef<HTMLSelectElement, SelectProps>(({ id, label, hint, error, suppressErrorHelperText, options, placeholder, className, value, defaultValue, onChange, name, disabled, }, ref) => {
     const reactId = useId();
     const selectId = id ?? reactId;
-    const selectedValue = value === undefined || value === null || value === ''
+    const isControlled = value !== undefined;
+    const selectedValue = value === null || value === ''
         ? ''
         : String(value);
     const selectedLabel = options.find((o) => String(o.value) === selectedValue)?.label ?? '';
@@ -52,7 +53,10 @@ const SelectInner = forwardRef<HTMLSelectElement, SelectProps>(({ id, label, hin
     if (error && !suppressErrorHelperText) {
         slots.formHelperText = { sx: { color: 'error.main' } };
     }
-    return (<TextField inputRef={ref} id={selectId} select name={name} label={label} value={selectedValue} onChange={handleChange} disabled={disabled} error={!!error} helperText={helperText} fullWidth className={className} slotProps={slots}>
+    const valueProps = isControlled
+        ? { value: selectedValue }
+        : { defaultValue: defaultValue !== undefined ? String(defaultValue) : '' };
+    return (<TextField inputRef={ref} id={selectId} select name={name} label={label} {...valueProps} onChange={handleChange} disabled={disabled} error={!!error} helperText={helperText} fullWidth className={className} slotProps={slots}>
         {placeholder ? (<MuiMenuItem value="" disabled>
             {placeholder}
           </MuiMenuItem>) : null}

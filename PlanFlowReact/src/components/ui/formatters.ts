@@ -22,15 +22,15 @@ const safeDate = (input: string | undefined): Date | null => {
 };
 export const formatDate = (input: string | undefined): string => {
     const date = safeDate(input);
-    return date ? DATE_FORMATTER.format(date) : '—';
+    return date ? DATE_FORMATTER.format(date) : '–';
 };
 export const formatDateTime = (input: string | undefined): string => {
     const date = safeDate(input);
-    return date ? DATETIME_FORMATTER.format(date) : '—';
+    return date ? DATETIME_FORMATTER.format(date) : '–';
 };
 export const formatTime = (input: string | undefined): string => {
     const date = safeDate(input);
-    return date ? TIME_FORMATTER.format(date) : '—';
+    return date ? TIME_FORMATTER.format(date) : '–';
 };
 export const toIsoDateTimeInput = (input: string | undefined): string => {
     const date = safeDate(input);

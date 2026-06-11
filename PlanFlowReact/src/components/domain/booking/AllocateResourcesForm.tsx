@@ -248,15 +248,15 @@ export const AllocateResourcesForm = ({ taskId, defaultFrom, defaultTo, eventFor
           <div className="grid min-w-0 gap-2">
             <Typography variant="subtitle2">Начало брони</Typography>
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-              <Input type="date" aria-label="Начало брони — дата" error={errors.reservedStartDate?.message} {...register('reservedStartDate')}/>
-              <Controller name="reservedStartTime" control={control} render={({ field }) => (<Select aria-label="Начало брони — время" options={timeOptions} placeholder="Время" error={errors.reservedStartTime?.message} name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref}/>)}/>
+              <Input type="date" aria-label="Начало брони – дата" error={errors.reservedStartDate?.message} {...register('reservedStartDate')}/>
+              <Controller name="reservedStartTime" control={control} render={({ field }) => (<Select aria-label="Начало брони – время" options={timeOptions} placeholder="Время" error={errors.reservedStartTime?.message} name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref}/>)}/>
             </div>
           </div>
           <div className="grid min-w-0 gap-2">
             <Typography variant="subtitle2">Завершение брони</Typography>
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-              <Input type="date" aria-label="Завершение брони — дата" error={errors.reservedEndDate?.message} {...register('reservedEndDate')}/>
-              <Controller name="reservedEndTime" control={control} render={({ field }) => (<Select aria-label="Завершение брони — время" options={timeOptions} placeholder="Время" error={errors.reservedEndTime?.message} name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref}/>)}/>
+              <Input type="date" aria-label="Завершение брони – дата" error={errors.reservedEndDate?.message} {...register('reservedEndDate')}/>
+              <Controller name="reservedEndTime" control={control} render={({ field }) => (<Select aria-label="Завершение брони – время" options={timeOptions} placeholder="Время" error={errors.reservedEndTime?.message} name={field.name} value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref}/>)}/>
             </div>
           </div>
         </div>

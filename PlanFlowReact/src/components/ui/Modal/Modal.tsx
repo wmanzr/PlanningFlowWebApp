@@ -15,7 +15,6 @@ export interface ModalProps {
     children?: ReactNode;
     size?: 'sm' | 'md' | 'ml' | 'lg';
     closeOnBackdrop?: boolean;
-    /** When false, the dialog body does not scroll; children should use internal scroll areas. */
     bodyScroll?: boolean;
 }
 const sizeMap: Record<NonNullable<ModalProps['size']>, 'xs' | 'sm' | 'md' | false> = {

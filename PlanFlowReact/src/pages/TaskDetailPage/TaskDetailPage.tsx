@@ -447,11 +447,11 @@ export const TaskDetailPage = () => {
             <dl className="grid gap-4 text-sm md:grid-cols-2">
               <Field label="Начало" value={formatDateTime(task.startTime)}/>
               <Field label="Завершение" value={formatDateTime(task.endTime)}/>
-              <Field label="Создатель" value={task.createdByUserId === undefined ? ('—') : (<SelfOrProfileLink subjectUserId={asUserId(task.createdByUserId)} viewerUserId={user?.id} nameLabel={surnameWithInitials(task.createdByFullName ?? undefined)}/>)}/>
+              <Field label="Создатель" value={task.createdByUserId === undefined ? ('–') : (<SelfOrProfileLink subjectUserId={asUserId(task.createdByUserId)} viewerUserId={user?.id} nameLabel={surnameWithInitials(task.createdByFullName ?? undefined)}/>)}/>
               <div className="md:col-span-2">
                 <dt className="text-xs uppercase tracking-wide text-paragraph">Требуемые навыки</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
-                  {task.requiredSkillIds.length === 0 ? (<span className="text-paragraph">—</span>) : (task.requiredSkillIds.map((id) => (<Badge key={id} tone="info">
+                  {task.requiredSkillIds.length === 0 ? (<span className="text-paragraph">–</span>) : (task.requiredSkillIds.map((id) => (<Badge key={id} tone="info">
                         {skillNameById.get(id) ?? 'Навык'}
                       </Badge>)))}
                 </dd>
@@ -583,7 +583,7 @@ export const TaskDetailPage = () => {
         </div>) : undefined}>
       {action.error ? (<ErrorMessage message={action.error.message} onShown={() => dispatch(tasksActions.clearActionError())}/>) : null}
       {showEventActivationHint ? (<Typography variant="body2" color="text.secondary" className="mb-4 max-w-3xl">
-          Мероприятие «{event?.title ?? '—'}» в статусе планирования, срок уже начался. После нажатия «В работу» оно
+          Мероприятие «{event?.title ?? '–'}» в статусе планирования, срок уже начался. После нажатия «В работу» оно
           перейдёт в активный статус, если это первая задача мероприятия, взятая в работу.
         </Typography>) : null}
       <Card padded={false} className="overflow-hidden">
@@ -627,12 +627,12 @@ export const TaskDetailPage = () => {
           <Field label="Завершение" value={formatDateTime(task.endTime)}/>
           <Field label="Координаты" value={typeof task.latitude === 'number' && typeof task.longitude === 'number'
             ? `${task.latitude.toFixed(4)}, ${task.longitude.toFixed(4)}`
-            : '—'}/>
-          <Field label="Создатель" value={task.createdByUserId === undefined ? ('—') : (<SelfOrProfileLink subjectUserId={asUserId(task.createdByUserId)} viewerUserId={user?.id} nameLabel={surnameWithInitials(task.createdByFullName ?? undefined)}/>)}/>
+            : '–'}/>
+          <Field label="Создатель" value={task.createdByUserId === undefined ? ('–') : (<SelfOrProfileLink subjectUserId={asUserId(task.createdByUserId)} viewerUserId={user?.id} nameLabel={surnameWithInitials(task.createdByFullName ?? undefined)}/>)}/>
           <div className="md:col-span-2">
             <dt className="text-xs uppercase tracking-wide text-paragraph">Требуемые навыки</dt>
             <dd className="mt-1 flex flex-wrap gap-2">
-              {task.requiredSkillIds.length === 0 ? (<span className="text-paragraph">—</span>) : (task.requiredSkillIds.map((id) => (<Badge key={id} tone="info">
+              {task.requiredSkillIds.length === 0 ? (<span className="text-paragraph">–</span>) : (task.requiredSkillIds.map((id) => (<Badge key={id} tone="info">
                     {skillNameById.get(id) ?? 'Навык'}
                   </Badge>)))}
             </dd>

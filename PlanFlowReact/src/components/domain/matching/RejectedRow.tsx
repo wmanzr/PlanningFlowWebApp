@@ -17,7 +17,7 @@ export const MATCHING_REJECTION_LABELS: Record<RejectionReason, string> = {
 const METERS_IN_KM = 1000;
 const formatDistance = (meters: number | undefined): string => {
     if (meters === undefined)
-        return '—';
+        return '–';
     if (meters < METERS_IN_KM)
         return `${Math.round(meters)} м`;
     return `${(meters / METERS_IN_KM).toFixed(1)} км`;
@@ -75,7 +75,7 @@ export const RejectedRow = ({ candidate, workloadWeekdayLabel = 'За день �
             </Typography>
             <div className="mt-1 flex flex-wrap gap-1">
               {candidate.matchedRequiredSkillIds.length === 0 ? (<Typography variant="caption" color="text.secondary">
-                  —
+                  –
                 </Typography>) : (candidate.matchedRequiredSkillIds.map((id) => (<Badge key={id} tone="info">
                     {skillNameById.get(id) ?? 'Навык'}
                   </Badge>)))}

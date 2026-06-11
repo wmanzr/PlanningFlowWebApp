@@ -6,7 +6,6 @@ export interface EmptyStateProps {
     title: ReactNode;
     description?: ReactNode;
     action?: ReactNode;
-    /** Растянуть на всю высоту/ширину flex-родителя (например тело карточки сводки рядом с заполненной колонкой). */
     fillContainer?: boolean;
 }
 export const EmptyState = ({ title, description, action, fillContainer }: EmptyStateProps) => (<Paper variant="outlined" sx={{

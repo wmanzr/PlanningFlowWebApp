@@ -1,5 +1,6 @@
 import { forwardRef, useId, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import TextField from '@mui/material/TextField';
+import { withRuInputLang } from '../inputLanguage';
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: ReactNode;
     hint?: ReactNode;
@@ -16,7 +17,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ id, la
                 '& textarea': { resize: 'none', overflowY: 'auto' },
             },
         },
-        htmlInput: rest,
+        htmlInput: withRuInputLang(rest),
     };
     if (error) {
         slots.formHelperText = { sx: { color: 'error.main' } };

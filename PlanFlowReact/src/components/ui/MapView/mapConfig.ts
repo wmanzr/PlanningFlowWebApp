@@ -5,9 +5,7 @@ export const MAP_DEFAULT_CENTER: GeoPoint = {
 };
 export const MAP_ZOOM_OVERVIEW = 13;
 export const MAP_ZOOM_DETAIL = 14;
-/** Minimum zoom at which marker title labels are shown (event, task, candidate). */
 export const MAP_ZOOM_MARKER_LABELS_MIN = 16.5;
-/** @deprecated use MAP_ZOOM_MARKER_LABELS_MIN */
 export const MAP_ZOOM_TASK_LABELS_MIN = MAP_ZOOM_MARKER_LABELS_MIN;
 export const MAP_ZOOM_LEGEND_FOCUS = 17.5;
 export function geoPointFromLatLng(latitude: number | undefined, longitude: number | undefined): GeoPoint | undefined {

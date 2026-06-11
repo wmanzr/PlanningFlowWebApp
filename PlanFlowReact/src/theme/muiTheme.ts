@@ -165,7 +165,6 @@ export function buildMuiTheme(mode: ThemeMode) {
                         },
                         '& .MuiInputLabel-root': { color: p.paragraph },
                         '& .MuiInputLabel-root.Mui-focused': { color: p.highlight },
-                        /* Нативные date/datetime в WebKit часто подкрашивают цифры «системным» жёлтым — фиксируем цвет текста. */
                         '& .MuiOutlinedInput-input[type="date"], & .MuiOutlinedInput-input[type="datetime-local"]': {
                             color: p.headline,
                             WebkitTextFillColor: p.headline,

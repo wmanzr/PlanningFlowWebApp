@@ -112,13 +112,13 @@ export const UserDetailPage = () => {
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-paragraph">В ваших мероприятиях</span>
                   <span className="font-medium text-headline">
-                    {viewerCtx.data.participantEventsUnderViewerCount ?? '—'}
+                    {viewerCtx.data.participantEventsUnderViewerCount ?? '–'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-paragraph">Всего</span>
                   <span className="font-medium text-headline">
-                    {viewerCtx.data.participantEventsTotalCount ?? '—'}
+                    {viewerCtx.data.participantEventsTotalCount ?? '–'}
                   </span>
                 </div>
               </div>
@@ -131,13 +131,13 @@ export const UserDetailPage = () => {
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-paragraph">В ваших мероприятиях</span>
                       <span className="font-medium text-headline">
-                        {viewerCtx.data.coordinatorEventsUnderOrganizerCount ?? '—'}
+                        {viewerCtx.data.coordinatorEventsUnderOrganizerCount ?? '–'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-paragraph">Всего</span>
                       <span className="font-medium text-headline">
-                        {viewerCtx.data.coordinatorEventsTotalCount ?? '—'}
+                        {viewerCtx.data.coordinatorEventsTotalCount ?? '–'}
                       </span>
                     </div>
                   </div>
@@ -163,7 +163,7 @@ export const UserDetailPage = () => {
                         {ev.status}
                       </Badge>
                       <span>{formatDateTime(ev.startDate)}</span>
-                      <span>—</span>
+                      <span>–</span>
                       <span>{formatDateTime(ev.endDate)}</span>
                     </div>
                   </li>))}

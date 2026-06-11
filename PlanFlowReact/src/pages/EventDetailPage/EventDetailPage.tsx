@@ -44,14 +44,13 @@ const cancelSchema = z.object({
 });
 type CancelValues = z.infer<typeof cancelSchema>;
 const PREVIEW_ROW = 'flex min-w-0 shrink-0 flex-col';
-/** Высота блока со списком координаторов в модалке фиксирована — окно не сжимается при пустом поиске. */
 const COORD_PICKER_LIST_AREA = 'h-[min(360px,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden rounded-md border border-secondary/35 bg-surface-muted/40';
 function formatInitials(fullName: string | undefined): string {
     if (!fullName)
-        return '—';
+        return '–';
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0)
-        return '—';
+        return '–';
     const last = parts[0] ?? '';
     const first = parts[1]?.[0] ? `${parts[1][0]}.` : '';
     const middle = parts[2]?.[0] ? `${parts[2][0]}.` : '';
@@ -376,7 +375,7 @@ export const EventDetailPage = () => {
             <EventStatusBadge status={event.status}/>
           </div>
           <Typography variant="body2" color="text.secondary" className="max-w-3xl leading-relaxed">
-            {event.description?.trim() ? event.description : '—'}
+            {event.description?.trim() ? event.description : '–'}
           </Typography>
           <Card>
             <div className="grid gap-4 p-5 text-sm sm:grid-cols-2">
@@ -473,7 +472,7 @@ export const EventDetailPage = () => {
               <EventStatusBadge status={event.status}/>
             </div>
             <Typography variant="body2" color="text.secondary" className="mt-2">
-              {formatDateTime(event.startDate)} — {formatDateTime(event.endDate)}
+              {formatDateTime(event.startDate)} – {formatDateTime(event.endDate)}
             </Typography>
             {event.description?.trim() ? (<Typography variant="body1" className="mt-4 w-full min-w-0 text-headline">
                 {event.description.trim()}
@@ -509,9 +508,9 @@ export const EventDetailPage = () => {
         </div>
 
         <dl className={`mt-8 grid w-full min-w-0 grid-cols-1 gap-6 text-sm ${hideEventCoordinatorRoster ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-          <Field label="Создатель" value={event.creatorId === undefined ? ('—') : (<SelfOrProfileLink subjectUserId={asUserId(event.creatorId)} viewerUserId={user?.id} nameLabel={formatInitials(userById.get(event.creatorId)?.fullName)}/>)}/>
+          <Field label="Создатель" value={event.creatorId === undefined ? ('–') : (<SelfOrProfileLink subjectUserId={asUserId(event.creatorId)} viewerUserId={user?.id} nameLabel={formatInitials(userById.get(event.creatorId)?.fullName)}/>)}/>
           {hideEventCoordinatorRoster ? null : (<Field label="Координаторы" value={<span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {event.coordinatorIds.length === 0 ? (<span className="text-paragraph">—</span>) : (<>
+                  {event.coordinatorIds.length === 0 ? (<span className="text-paragraph">–</span>) : (<>
                       {event.coordinatorIds.slice(0, 2).map((id, index) => (<Fragment key={id}>
                           {index > 0 ? <span className="text-paragraph">, </span> : null}
                           <SelfOrProfileLink subjectUserId={asUserId(id)} viewerUserId={user?.id} nameLabel={formatInitials(userById.get(id)?.fullName)}/>
@@ -545,8 +544,9 @@ export const EventDetailPage = () => {
             <EventMapPanel markers={mapMarkers} {...(mapCenter !== undefined ? { center: mapCenter } : {})}/>
 
       {hasCoordinator ? (<div className="flex w-full min-w-0 flex-col gap-6">
-          <div className="grid w-full min-w-0 items-start gap-6 lg:grid-cols-2 lg:items-stretch">
-          <Card padded={false} className="flex min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 lg:h-full" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
+          <div className="flex w-full min-w-0 flex-col gap-6 lg:flex-row lg:items-stretch">
+          <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+          <Card padded={false} className="flex min-h-0 w-full flex-1 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventTasks(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventTasks(event.id));
@@ -567,7 +567,7 @@ export const EventDetailPage = () => {
                   Добавить задачу
                 </Button>) : null}
             </div>
-            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} lg:min-h-0 lg:flex-1`}>
+            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} flex min-h-0 flex-1 flex-col`}>
               {!canViewTasksPanel ? (<div className="flex min-h-0 flex-1 flex-col">
                   <EmptyState fillContainer title="Нет доступа к задачам"/>
                 </div>) : tasks.length === 0 && tasksList.status !== 'pending' ? (<div className="flex min-h-0 flex-1 flex-col">
@@ -594,8 +594,10 @@ export const EventDetailPage = () => {
                 </div>) : null}
             </div>
           </Card>
+          </div>
 
-          <Card padded={false} className="flex min-h-0 w-full min-w-0 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 lg:h-full" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
+          <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+          <Card padded={false} className="flex min-h-0 w-full flex-1 flex-col cursor-pointer outline-none transition hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30" role="link" tabIndex={0} onClick={() => navigate(PATHS.eventIncidents(event.id))} onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     navigate(PATHS.eventIncidents(event.id));
@@ -617,7 +619,7 @@ export const EventDetailPage = () => {
                   Создать инцидент
                 </Button>) : null}
             </div>
-            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} lg:min-h-0 lg:flex-1`}>
+            <div className={`${SUMMARY_PREVIEW_PANEL_BODY} flex min-h-0 flex-1 flex-col`}>
               {incidents.length === 0 && incidentsList.status !== 'pending' ? (<div className="flex min-h-0 flex-1 flex-col">
                   <EmptyState fillContainer title="Инцидентов нет"/>
                 </div>) : null}
@@ -642,6 +644,7 @@ export const EventDetailPage = () => {
                 </div>) : null}
             </div>
           </Card>
+          </div>
           </div>
           {canManageEvent && event.status === EventStatus.COMPLETED ? (<EventAiRecommendationsPanel fetchStatus={postMortem.status} fetchError={postMortem.error} report={postMortemReportForEvent} pollTimedOut={postMortemPollTimedOut}/>) : null}
         </div>) : (<Card>
@@ -727,7 +730,7 @@ export const EventDetailPage = () => {
       <Modal open={isCancelOpen} onClose={() => {
             setIsCancelOpen(false);
             cancelForm.reset({ reason: '' });
-        }} title="Отмена мероприятия" description="Укажите причину — она будет сохранена в журнале." footer={<>
+        }} title="Отмена мероприятия" description="Укажите причину – она будет сохранена в журнале." footer={<>
             <Button variant="ghost" onClick={() => {
                 setIsCancelOpen(false);
                 cancelForm.reset({ reason: '' });

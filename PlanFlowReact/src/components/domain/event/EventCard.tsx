@@ -14,10 +14,10 @@ export interface EventCardProps {
 }
 export function surnameWithInitials(fullName: string | undefined): string {
     if (!fullName)
-        return '—';
+        return '–';
     const parts = fullName.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0)
-        return '—';
+        return '–';
     const last = parts[0] ?? '';
     const first = parts[1]?.[0] ? `${parts[1][0]}.` : '';
     const middle = parts[2]?.[0] ? `${parts[2][0]}.` : '';
@@ -46,7 +46,7 @@ export const EventCard = ({ event, onClick, rightSlot, userNameById, viewerUserI
             <EventStatusBadge status={event.status}/>
           </div>
           <Typography variant="body2" color="text.secondary" className="mt-0.5 line-clamp-2 leading-snug">
-            {event.description?.trim() ? event.description : '—'}
+            {event.description?.trim() ? event.description : '–'}
           </Typography>
 
           <div className="mt-2 space-y-1.5 text-left">

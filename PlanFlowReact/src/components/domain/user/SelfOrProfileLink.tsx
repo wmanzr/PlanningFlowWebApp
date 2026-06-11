@@ -11,7 +11,7 @@ export interface SelfOrProfileLinkProps {
 }
 export function SelfOrProfileLink({ subjectUserId, viewerUserId, nameLabel, className = defaultClassName, }: SelfOrProfileLinkProps) {
     if (subjectUserId === undefined)
-        return <>—</>;
+        return <>–</>;
     if (isViewerSubject(viewerUserId, subjectUserId)) {
         return (<Link to={PATHS.profile} className={className}>
         Вы

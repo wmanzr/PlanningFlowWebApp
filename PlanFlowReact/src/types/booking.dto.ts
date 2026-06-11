@@ -29,7 +29,6 @@ export interface TaskAllocateResourcesRequest {
     reservedFrom: IsoDateTime;
     reservedTo: IsoDateTime;
 }
-/** Ответ GET …/reserve-preview */
 export interface ResourceReservePreviewDto {
     fromInternal: number;
     fromExternal: number;

@@ -2,6 +2,7 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'rea
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import { cn } from '../cn';
+import { withRuInputLang } from '../inputLanguage';
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: ReactNode;
     hint?: ReactNode;
@@ -18,7 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ id, label, hint
             startAdornment: leftSlot ? (<InputAdornment position="start">{leftSlot}</InputAdornment>) : undefined,
             endAdornment: rightSlot ? (<InputAdornment position="end">{rightSlot}</InputAdornment>) : undefined,
         },
-        htmlInput: { min, max, step, ...rest },
+        htmlInput: withRuInputLang({ min, max, step, ...rest }),
         inputLabel: {
             shrink: Boolean(label),
         },

@@ -8,7 +8,7 @@ import { Button, PublicNavHeader } from '@/components/ui';
 import { PATHS } from '../paths';
 const CONTACT_EMAIL = (import.meta.env.VITE_PUBLIC_CONTACT_EMAIL as string | undefined)?.trim() || 'contact@planflow.app';
 const PROJECT_NOTE = (import.meta.env.VITE_PUBLIC_PROJECT_BYLINE as string | undefined)?.trim() ||
-    'PlanningFlow — учёт мероприятий, задач и назначений для команд, которые работают на площадке и в офисе.';
+    'PlanningFlow – учёт мероприятий, задач и назначений для команд, которые работают на площадке и в офисе.';
 const EMPTY_STATS: PublicLandingStatsDto = {
     totalEventsCount: 0,
     completedEventsCount: 0,
@@ -80,11 +80,12 @@ export const LandingPage = () => {
     const aUsers = useAnimatedCount(statsReady ? t.registeredUsersCount : 0, dur);
     const aInc = useAnimatedCount(statsReady ? t.resolvedIncidentsCount : 0, dur);
     const aAsg = useAnimatedCount(statsReady ? t.acceptedAssignmentsCount : 0, dur);
+    const isDark = mode === 'dark';
     const gradientOrbs = useMemo(() => ({
         a: app.highlight,
         b: app.accent,
-        c: mode === 'dark' ? 'rgba(167, 139, 250, 0.35)' : 'rgba(98, 70, 234, 0.28)',
-    }), [app.highlight, app.accent, mode]);
+        c: isDark ? 'rgba(167, 139, 250, 0.35)' : 'rgba(98, 70, 234, 0.28)',
+    }), [app.highlight, app.accent, isDark]);
     const statRows: {
         label: string;
         value: number;
@@ -101,16 +102,16 @@ export const LandingPage = () => {
             backgroundColor: app.bg,
         }}>
       <section className="relative flex min-h-[100dvh] snap-start flex-col">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-landing-drift absolute -left-[20%] top-[10%] h-[min(52vw,420px)] w-[min(52vw,420px)] rounded-full blur-[100px]" style={{
+        <div className="pointer-events-none absolute inset-0 isolate overflow-hidden">
+          <div className={`animate-landing-drift will-change-transform absolute -left-[20%] top-[10%] h-[min(52vw,420px)] w-[min(52vw,420px)] rounded-full ${isDark ? 'blur-[100px]' : 'blur-[72px]'}`} style={{
             background: gradientOrbs.a,
             opacity: 0.35,
         }}/>
-          <div className="animate-landing-drift-slow absolute -right-[15%] top-[35%] h-[min(48vw,380px)] w-[min(48vw,380px)] rounded-full blur-[90px]" style={{
+          <div className={`animate-landing-drift-slow will-change-transform absolute -right-[15%] top-[35%] h-[min(48vw,380px)] w-[min(48vw,380px)] rounded-full ${isDark ? 'blur-[90px]' : 'blur-[64px]'}`} style={{
             background: gradientOrbs.b,
             opacity: 0.28,
         }}/>
-          <div className="animate-landing-pulse-soft absolute left-[25%] bottom-[5%] h-[min(40vw,320px)] w-[min(55vw,440px)] rounded-full blur-[110px]" style={{
+          <div className={`animate-landing-pulse-soft will-change-transform absolute left-[25%] bottom-[5%] h-[min(40vw,320px)] w-[min(55vw,440px)] rounded-full ${isDark ? 'blur-[110px]' : 'blur-[72px]'}`} style={{
             background: gradientOrbs.c,
         }}/>
         </div>
@@ -129,7 +130,7 @@ export const LandingPage = () => {
             background: `linear-gradient(90deg, ${app.button}, ${app.accent})`,
         }} aria-hidden/>
             <p className="mx-auto mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-paragraph/90 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:210ms] md:mt-4 md:text-[15px]">
-                Один план — одна система. Все задачи, люди и ресурсы синхронизированы и всегда актуальны.
+                Один план – одна система. Все задачи, люди и ресурсы синхронизированы и всегда актуальны.
             </p>
           </div>
 
@@ -139,18 +140,18 @@ export const LandingPage = () => {
                 d: 'Назначайте людей на задачи и сразу видите, кто за что отвечает. Без хаоса в чатах.',
             }, {
                 t: 'План и выполнение в одном месте',
-                d: 'Все задачи, сроки и статусы — внутри мероприятия. Понятно, что сделано и что требует отдельного внимания.',
+                d: 'Все задачи, сроки и статусы – внутри мероприятия. Понятно, что сделано и что требует отдельного внимания.',
             }, {
                 t: 'Ресурсы и инциденты',
                 d: 'Бронирования и учёт сбоев привязаны к событию и задачам, чтобы быстрее восстановить работу.',
-            }].map((item) => (<div key={item.t} className="rounded-lg border border-secondary/40 bg-surface/50 px-3 py-2.5 text-left shadow-card backdrop-blur-md md:px-4 md:py-3">
+            }].map((item) => (<div key={item.t} className={`rounded-lg border border-secondary/40 px-3 py-2.5 text-left shadow-card md:px-4 md:py-3 ${isDark ? 'bg-surface/50 backdrop-blur-md' : 'bg-surface/95'}`}>
                 <h3 className="text-[13px] font-semibold text-headline md:text-sm">{item.t}</h3>
                 <p className="mt-1 text-[11px] leading-relaxed text-paragraph/88 md:text-xs">{item.d}</p>
               </div>))}
           </div>
 
           <div className="mx-auto mt-6 grid w-full max-w-5xl grid-cols-2 gap-2 opacity-100 motion-safe:opacity-0 motion-safe:animate-landing-hero-fade motion-safe:[animation-delay:360ms] sm:grid-cols-3 md:mt-8 md:gap-3">
-            {statRows.map((row) => (<div key={row.label} className="rounded-xl border border-secondary/45 bg-surface-muted/55 px-3 py-2.5 backdrop-blur-md md:py-3">
+            {statRows.map((row) => (<div key={row.label} className={`rounded-xl border border-secondary/45 px-3 py-2.5 md:py-3 ${isDark ? 'bg-surface-muted/55 backdrop-blur-md' : 'bg-surface-muted/95'}`}>
                 <p className="text-[10px] font-medium uppercase leading-snug tracking-wide text-paragraph/70 md:text-[11px]">
                   {row.label}
                 </p>
@@ -179,7 +180,7 @@ export const LandingPage = () => {
         </div>
       </section>
 
-      <footer id="landing-footer" className="snap-start border-t border-secondary/35 bg-surface/80 px-5 py-10 backdrop-blur-md md:px-10">
+      <footer id="landing-footer" className={`snap-start border-t border-secondary/35 px-5 py-10 md:px-10 ${isDark ? 'bg-surface/80 backdrop-blur-md' : 'bg-surface'}`}>
         <div className="mx-auto flex max-w-3xl flex-col gap-6 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-paragraph/70">

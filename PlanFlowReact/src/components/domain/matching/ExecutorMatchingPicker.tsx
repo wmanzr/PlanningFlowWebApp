@@ -122,7 +122,7 @@ export function ExecutorMatchingPicker({ matchResult, matchStatus, matchError, t
                             <Typography variant="subtitle2" className="shrink-0">
                                 Все исполнители
                             </Typography>
-                            <TextField className="shrink-0" size="small" label="Поиск по ФИО" value={executorSearch} onChange={(e) => onExecutorSearchChange(e.target.value)} placeholder="Имя или фамилия"/>
+                            <TextField className="shrink-0" size="small" label="Поиск по ФИО" value={executorSearch} onChange={(e) => onExecutorSearchChange(e.target.value)} placeholder="Имя или фамилия" slotProps={{ htmlInput: { lang: 'ru' } }}/>
                             {lists && lists.leftItems.length === 0 && lists.rejectedOrphans.length === 0 ? (<MatchingListEmptyState />) : (<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
                                     {lists?.leftItems.map((item) => {
                     if (item.kind === 'overflow-ranked') {

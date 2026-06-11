@@ -38,7 +38,7 @@ function buildIncidentSchema(tasks: TaskResponseDto[]) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ['noTaskAttach'],
-                    message: 'У мероприятия нет задач — отметьте «Не прикреплять к задаче».',
+                    message: 'У мероприятия нет задач – отметьте «Не прикреплять к задаче».',
                 });
             }
             return;
@@ -184,7 +184,7 @@ export const IncidentForm = ({ reporterId, eventId, tasks, defaultTaskId, submit
                     </button>
                   </li>)))}
             </ul>) : null}
-          <Input label="Задача" placeholder="Начните вводить название — появится список" value={taskQuery} onChange={(e) => {
+          <Input label="Задача" placeholder="Начните вводить название – появится список" value={taskQuery} onChange={(e) => {
                 const v = e.target.value;
                 setTaskQuery(v);
                 setValue('taskId', undefined, { shouldValidate: false });
@@ -195,8 +195,8 @@ export const IncidentForm = ({ reporterId, eventId, tasks, defaultTaskId, submit
             }} error={errors.taskId?.message} autoComplete="off" disabled={!hasTasks}/>
           {!hasTasks ? (<p className="text-xs text-paragraph">
               {tasks.length === 0
-                    ? 'На мероприятии нет задач — отметьте «Не прикреплять к задаче».'
-                    : 'Нет активных задач — отметьте «Не прикреплять к задаче».'}
+                    ? 'На мероприятии нет задач – отметьте «Не прикреплять к задаче».'
+                    : 'Нет активных задач – отметьте «Не прикреплять к задаче».'}
             </p>) : null}
         </div>) : null}
 

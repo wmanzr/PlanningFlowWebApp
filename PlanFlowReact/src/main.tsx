@@ -4,6 +4,9 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { App } from './App';
 import './index.css';
+
+document.documentElement.lang = 'ru';
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
     throw new Error('Root element #root not found');

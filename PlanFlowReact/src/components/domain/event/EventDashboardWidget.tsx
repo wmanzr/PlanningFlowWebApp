@@ -91,9 +91,9 @@ function useNowTick(enabled: boolean, intervalMs = 1000): number {
 const statTileClass = 'rounded-lg border border-secondary/60 bg-surface-muted px-3 py-3 sm:px-4 sm:py-4';
 function formatStatValue(value: number | string): string | number {
     if (typeof value === 'number') {
-        return Number.isFinite(value) ? value : '—';
+        return Number.isFinite(value) ? value : '–';
     }
-    return value === '' ? '—' : value;
+    return value === '' ? '–' : value;
 }
 function BigStat({ label, value }: {
     label: string;
@@ -124,7 +124,7 @@ const EventHorizonCountdown = ({ startDate, endDate, eventStatus, }: {
         const startMs = new Date(startDate).getTime();
         const endMs = new Date(endDate).getTime();
         if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
-            return { title: 'До старта', value: '—' };
+            return { title: 'До старта', value: '–' };
         }
         if (eventStatus === EventStatus.COMPLETED) {
             return { title: 'Мероприятие', value: 'Завершено' };
@@ -178,7 +178,7 @@ export const EventDashboardWidget = ({ data, variant = 'standalone', }: EventDas
               {data.title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {formatDateTime(data.startDate)} — {formatDateTime(data.endDate)}
+              {formatDateTime(data.startDate)} – {formatDateTime(data.endDate)}
             </Typography>
           </div>)}
         <div className="grid gap-3 sm:grid-cols-3">

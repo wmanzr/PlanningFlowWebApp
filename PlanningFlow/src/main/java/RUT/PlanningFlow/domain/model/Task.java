@@ -145,7 +145,7 @@ public class Task {
         if (this.event != null && dependency.getEvent() != null && !this.event.equals(dependency.getEvent())) {
             throw new DomainException("Родительская задача должна относиться к тому же мероприятию", "DEPENDENCY_WRONG_EVENT");
         }
-        if (java.util.Objects.equals(this.id, dependency.getId())) {
+        if (Objects.equals(this.id, dependency.getId())) {
             throw new DomainException("Задача не может зависеть от самой себя", "SELF_DEPENDENCY_NOT_ALLOWED");
         }
         if (dependsOn(dependency, this)) {
